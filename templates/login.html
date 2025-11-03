@@ -4,27 +4,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - SAUDI ARAMCO</title>
+    <title>Login - REGARD</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+        /* Importa ícones do Font Awesome para o ícone de olho e WhatsApp */
         @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css');
 
         :root {
-            /* Tema ELETROBRAS (Arquivo 1) reintroduzido */
-            --cor-fundo-principal: #ffffff; /* Fundo branco */
+            /* Cores base do tema REGARD (Verde/Dourado/Fundo Claro) */
+            --cor-fundo-principal: #ffffff; 
             --cor-card-fundo: rgba(255, 255, 255, 0.9);
             --cor-borda-input: #e0e0e0;
             --cor-placeholder: #616161;
-            --cor-texto-claro: #212121; /* Texto escuro para fundo claro */
+            --cor-texto-claro: #212121; 
             --cor-texto-escuro: #212121;
-            /* Destaques SAUDI ARAMCO (Verde/Dourado) mantidos */
+            /* Destaques REGARD */
             --cor-destaque-1: #008000; /* Verde escuro (corporativo) */
             --cor-destaque-2: #ffcc00; /* Dourado/Amarelo Petróleo */
-            --cor-botao-cadastro: linear-gradient(45deg, var(--cor-destaque-1), var(--cor-destaque-2));
-            --cor-shadow-card: 0 10px 40px rgba(0, 0, 0, 0.1);
+            --cor-botao-principal: linear-gradient(45deg, var(--cor-destaque-1), var(--cor-destaque-2)); 
         }
 
-        /* ESTILOS BASE (PADRÃO PARA DESKTOPS E TELAS MAIORES) */
+        /* --- ESTILOS BASE (PADRÃO PARA DESKTOPS E TELAS MAIORES) --- */
         body {
             font-family: 'Montserrat', sans-serif;
             margin: 0;
@@ -33,7 +33,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            min-height: 100vh; /* Mantido para telas grandes */
+            min-height: 100vh;
             background-color: var(--cor-fundo-principal);
             color: var(--cor-texto-escuro);
             position: relative;
@@ -47,6 +47,7 @@
             100% { background-color: #f0f0f0; }
         }
 
+        /* Fundo com imagem de petróleo esmaecida */
         body::before {
             content: '';
             position: fixed;
@@ -63,61 +64,25 @@
             filter: grayscale(100%) brightness(150%);
         }
 
+        /* Título REGARD - AGORA ESTÁTICO E SEM PISCAR */
         .title-platform {
             font-size: 4em; 
             font-weight: 700;
-            color: var(--cor-destaque-2); 
-            text-shadow: 0 0 20px var(--cor-destaque-2), 0 0 40px var(--cor-destaque-1);
+            color: var(--cor-destaque-1); /* Uso do Verde principal (como na imagem) */
+            /* Text-shadow para criar o efeito de brilho suave e estático */
+            text-shadow: 0 0 10px rgba(0, 128, 0, 0.7), 0 0 20px rgba(0, 128, 0, 0.5); 
             letter-spacing: 3px; 
             margin-bottom: 30px;
             padding: 0 20px;
             position: relative;
             text-transform: uppercase;
-            animation: piscaDourado 1s infinite alternate;
             white-space: nowrap; 
-        }
-
-        @keyframes piscaDourado {
-            0% { text-shadow: 0 0 10px var(--cor-destaque-2), 0 0 20px var(--cor-destaque-1); }
-            100% { text-shadow: 0 0 25px var(--cor-destaque-2), 0 0 50px var(--cor-destaque-1); }
+            /* REMOVIDO: animation: piscaDourado... */
         }
         
-        /* Efeitos de pulso de luz (mantidos) */
-        .title-platform::before, .title-platform::after {
-            content: '';
-            position: absolute;
-            background-color: transparent;
-            border-radius: 50%;
-            animation: pulsoLuz 2s infinite ease-in-out;
-            opacity: 0;
-        }
+        /* REMOVIDO: Keyframes piscaDourado e os pseudo-elementos ::before/::after com pulsoLuz */
 
-        .title-platform::before {
-            width: 150px;
-            height: 150px;
-            top: 50%;
-            left: -50px;
-            transform: translateY(-50%);
-            box-shadow: 0 0 50px 30px var(--cor-destaque-2);
-            animation-delay: 0s;
-        }
-
-        .title-platform::after {
-            width: 150px;
-            height: 150px;
-            top: 50%;
-            right: -50px;
-            transform: translateY(-50%);
-            box-shadow: 0 0 50px 30px var(--cor-destaque-1);
-            animation-delay: 1s;
-        }
-
-        @keyframes pulsoLuz {
-            0% { transform: scale(0.5); opacity: 0.8; }
-            50% { transform: scale(1.2); opacity: 0; }
-            100% { transform: scale(0.5); opacity: 0.8; }
-        }
-
+        /* Card Principal */
         .content {
             background: var(--cor-card-fundo);
             backdrop-filter: blur(10px);
@@ -138,12 +103,24 @@
             to { opacity: 1; transform: scale(1); }
         }
 
-        h2 {
+        /* Título Secundário (Acesse sua conta) */
+        .header h2 {
             margin-top: 0;
             margin-bottom: 30px;
             font-size: 2.5em;
-            color: var(--cor-texto-escuro);
+            color: var(--cor-destaque-1); /* Uso do verde principal */
             font-weight: 700;
+            position: relative;
+        }
+
+        .header h2::after {
+            content: '';
+            display: block;
+            width: 50%;
+            height: 4px;
+            background-color: var(--cor-destaque-2); /* Linha dourada sob o título */
+            margin: 10px auto 0;
+            border-radius: 2px;
         }
         
         /* Estilizando os grupos de formulário */
@@ -163,7 +140,7 @@
 
         .auth-form input {
             width: 100%;
-            padding: 14px 20px; /* Ajuste de padding para inputs mais finos */
+            padding: 14px 20px;
             border: 2px solid var(--cor-borda-input);
             border-radius: 12px;
             background-color: #f9f9f9; 
@@ -179,6 +156,7 @@
             box-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
         }
 
+        /* Estilo do ícone de alternar senha */
         .toggle-password { 
             position: absolute; 
             right: 15px; 
@@ -187,10 +165,14 @@
             color: var(--cor-placeholder); 
             cursor: pointer; 
             transition: color 0.3s ease;
+            font-size: 1.1em;
+        }
+        
+        .toggle-password:hover {
+            color: var(--cor-destaque-2);
         }
 
-
-        /* Estilos de erro, se existirem no contexto do login */
+        /* Estilos de erro do Django */
         .errorlist {
             list-style: none;
             padding: 0;
@@ -201,12 +183,13 @@
             text-align: left;
         }
 
+        /* Botão Principal (Entrar) */
         .submit-button { 
             width: 100%;
-            padding: 18px 20px; /* Ajuste de padding para botão mais fino */
+            padding: 18px 20px;
             border: none;
             border-radius: 12px;
-            background: var(--cor-botao-cadastro);
+            background: var(--cor-botao-principal);
             color: var(--cor-texto-escuro); 
             font-size: 1.2em;
             font-weight: 700;
@@ -230,9 +213,10 @@
             box-shadow: 0 10px 30px rgba(255, 204, 0, 0.6);
         }
 
+        /* Links de Navegação (Suporte e Cadastro) */
         .login-link a, .support-link a {
             display: block;
-            margin-top: 35px;
+            margin-top: 20px; 
             color: var(--cor-destaque-2);
             text-decoration: none;
             font-weight: 600;
@@ -241,7 +225,8 @@
         }
 
         .login-link a {
-            margin-top: 15px; /* Ajuste para o link de cadastro ficar mais próximo */
+            margin-top: 15px; 
+            font-size: 1em;
         }
 
         .login-link a:hover, .support-link a:hover {
@@ -249,7 +234,7 @@
             text-shadow: 0 0 10px var(--cor-destaque-1);
         }
 
-        /* Efeitos de partículas de energia/óleo */
+        /* Efeitos de partículas de energia/óleo (Fundo) */
         .energia-particula {
             position: fixed;
             background-color: var(--cor-destaque-2);
@@ -270,80 +255,75 @@
             50% { opacity: 0.5; }
         }
 
-        /* ---------------------------------------------------------------------- */
-        /* MEDIA QUERY PARA TELAS PEQUENAS (MOBILE) */
-        /* ---------------------------------------------------------------------- */
+        /* --- MEDIA QUERY PARA TELAS PEQUENAS (MOBILE) --- */
         @media (max-width: 600px) {
             
             body {
-                min-height: auto; /* Permite que o body se ajuste ao conteúdo */
-                padding-top: 20px; /* Adiciona um pequeno espaçamento no topo */
-                padding-bottom: 20px; /* Adiciona um pequeno espaçamento na base */
-                justify-content: flex-start; /* Alinha o conteúdo ao topo para caber mais */
+                min-height: auto; 
+                padding-top: 20px; 
+                padding-bottom: 20px; 
+                justify-content: flex-start;
             }
 
             .title-platform {
-                font-size: 3em; /* Reduz o tamanho da fonte */
+                font-size: 3em; 
                 letter-spacing: 2px; 
                 margin-bottom: 20px; 
                 padding: 0 10px; 
                 white-space: normal;
                 text-align: center;
+                /* Garante que o brilho se mantenha em mobile */
+                text-shadow: 0 0 8px rgba(0, 128, 0, 0.7), 0 0 15px rgba(0, 128, 0, 0.5); 
             }
             
-            /* Remove os pulsos de luz para economizar espaço e foco em mobile */
-            .title-platform::before, .title-platform::after {
-                display: none; 
-            }
+            /* Remove os pulsos de luz para mobile (já que não existem mais) */
+            /* .title-platform::before, .title-platform::after { display: none; } */
 
             .content {
-                padding: 30px 20px; /* Reduz o padding interno */
-                width: 95%; /* Aumenta a largura para usar quase toda a tela */
+                padding: 30px 20px; 
+                width: 95%; 
                 max-width: 100%; 
-                border-radius: 10px; /* Arredondamento menor */
+                border-radius: 10px; 
             }
 
-            h2 {
-                font-size: 2em; /* Reduz o tamanho do título "Acesse sua conta" */
+            .header h2 {
+                font-size: 2em; 
                 margin-bottom: 20px;
             }
 
             .form-group {
-                margin-bottom: 20px; /* Reduz a margem entre campos */
+                margin-bottom: 20px; 
             }
 
             .auth-form input {
-                padding: 12px 15px; /* Reduz um pouco o tamanho dos inputs */
+                padding: 12px 15px; 
                 font-size: 1em;
             }
             
             .submit-button {
-                padding: 16px 15px; /* Reduz um pouco o tamanho do botão */
+                padding: 16px 15px; 
                 font-size: 1.1em;
                 letter-spacing: 1px;
             }
 
             .login-link a, .support-link a {
-                margin-top: 20px; /* Ajuste final de espaçamento */
-            }
-
-            .login-link a {
-                margin-top: 10px;
+                margin-top: 20px;
+                font-size: 1em;
             }
         }
     </style>
 </head>
 <body>
-    <div class="title-platform">SAUDI ARAMCO</div>
+    <div class="title-platform">REGARD</div>
     <div class="content">
         <div class="header">
-            <h2>Acesse sua conta</h2>
+            <h2>Acesse sua conta</h2> 
         </div>
         
         <form method="post" class="auth-form">
             {% csrf_token %}
 
-            {# Exibição de erros gerais do formulário (manter lógica Django) #}
+            {# Tratamento de erros gerais do formulário (Django) #}
             {% if form.non_field_errors %}
                 <ul class="errorlist">
                     {% for error in form.non_field_errors %}
@@ -353,9 +333,9 @@
             {% endif %}
 
             <div class="form-group">
-                <label for="{{ form.username.id_for_label }}">Número de Telefone:</label>
+                <label for="{{ form.username.id_for_label }}"><i class="fas fa-mobile-alt"></i> Número de Telefone:</label>
                 <div style="position: relative;">
-                    {{ form.username }}
+                    {{ form.username }} 
                 </div>
                 {# Adiciona a exibição de erros do campo username #}
                 {% if form.username.errors %}
@@ -368,10 +348,9 @@
             </div>
             
             <div class="form-group">
-                <label for="{{ form.password.id_for_label }}">Senha:</label>
+                <label for="{{ form.password.id_for_label }}"><i class="fas fa-lock"></i> Senha:</label>
                 <div style="position: relative;">
-                    {{ form.password }}
-                    {# Adicionado ícone de olho e seu ID para o script #}
+                    {{ form.password }} 
                     <i class="fas fa-eye toggle-password" id="togglePassword"></i>
                 </div>
                 {# Adiciona a exibição de erros do campo password #}
@@ -393,11 +372,12 @@
                     <i class="fab fa-whatsapp"></i> Suporte
                 </a>
             {% else %}
-                <a href="#">
+                <a href="#" onclick="alert('Link de Suporte não configurado.');">
                     <i class="fab fa-whatsapp"></i> Suporte
                 </a>
             {% endif %}
         </div>
+        
         <div class="login-link">
             <a href="{% url 'cadastro' %}">Não tem conta? Cadastre-se</a>
         </div>
@@ -405,27 +385,29 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Lógica do botão de alternar senha
+            // Lógica do botão de alternar senha (ícone de olho)
             const setupPasswordToggle = (toggleId, inputId) => {
-                const toggle = document.querySelector(`#${toggleId}`);
-                const input = document.querySelector(`#${inputId}`);
+                const toggle = document.querySelector(`#KZ{toggleId}`);
+                const input = document.querySelector(`#KZ{inputId}`);
                 
                 if (toggle && input) {
-                    toggle.addEventListener('click', function (e) {
-                        const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
-                        input.setAttribute('type', type);
-                        this.classList.toggle('fa-eye');
-                        this.classList.toggle('fa-eye-slash');
-                    });
+                    // Verifica se o input é um campo de senha antes de adicionar o evento
+                    if(input.getAttribute('type') === 'password') {
+                        toggle.addEventListener('click', function (e) {
+                            const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+                            input.setAttribute('type', type);
+                            this.classList.toggle('fa-eye');
+                            this.classList.toggle('fa-eye-slash');
+                        });
+                    }
                 }
             };
 
-            // Para o login, o campo de senha é 'password'
+            // Encontra o campo de senha do Django e aplica o toggle
             const passwordInput = document.querySelector('input[name="password"]');
-
             if(passwordInput) setupPasswordToggle('togglePassword', passwordInput.id);
 
-            // Código para criar as partículas de energia/óleo
+            // Código para criar as partículas de energia/óleo (Efeito de fundo)
             const numParticulas = 30;
             const body = document.body;
 
@@ -434,13 +416,14 @@
                 particula.classList.add('energia-particula');
                 
                 const size = Math.random() * 8 + 3;
-                particula.style.width = `${size}px`;
-                particula.style.height = `${size}px`;
+                particula.style.width = `KZ{size}px`;
+                particula.style.height = `KZ{size}px`;
                 particula.style.backgroundColor = i % 2 === 0 ? 'var(--cor-destaque-1)' : 'var(--cor-destaque-2)';
 
                 const delay = Math.random() * 10;
-                particula.style.animationDelay = `${delay}s`;
+                particula.style.animationDelay = `KZ{delay}s`;
 
+                // Variáveis CSS para a animação
                 particula.style.setProperty('--rand-x', Math.random() * 2 - 0.5);
                 particula.style.setProperty('--rand-y', Math.random() * 2 - 0.5);
                 particula.style.setProperty('--rand-x-end', Math.random() * 2 - 0.5);

@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.utils import timezone
+from django.db.models import Sum # Import necessário para a propriedade total_withdrawn
 import uuid
 import os
 
@@ -52,6 +53,32 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
                     self.invite_code = new_invite_code
                     break
         super().save(*args, **kwargs)
+        
+    # --- PROPRIEDADES ADICIONADAS PARA O PERFIL ---
+    @property
+    def active_level(self):
+        """
+        Retorna o objeto Level ativo do usuário. 
+        Necessário para a exibição de {{ user.active_level.name }} no template.
+        """
+        # Acessa o UserLevel ativo, que tem uma FK para o Level
+        active_user_level = self.userlevel_set.filter(is_active=True).first()
+        
+        # Se houver um nível ativo, retorna o objeto Level. Se não, retorna None.
+        return active_user_level.level if active_user_level else None
+
+    @property
+    def total_withdrawn(self):
+        """
+        Calcula e retorna o total de saques aprovados do usuário.
+        Necessário para a exibição de {{ user.total_withdrawn }} no template.
+        """
+        # Calcula a soma dos saques com status 'Aprovado' (assumindo o status que usa)
+        total = Withdrawal.objects.filter(user=self, status='Aprovado').aggregate(
+            Sum('amount')
+        )['amount__sum'] or 0.00
+        return total
+    # --- FIM DAS PROPRIEDADES ADICIONADAS ---
 
 # ---
 
@@ -59,6 +86,12 @@ class PlatformSettings(models.Model):
     whatsapp_link = models.URLField(
         verbose_name="Link do grupo de apoio do WhatsApp",
         help_text="O link para o grupo de WhatsApp que aparecerá no botão de apoio."
+    )
+    app_download_link = models.URLField(
+        max_length=500,
+        default='https://seulinkdedownload.com', # Placeholder. Configure o link real no Admin.
+        verbose_name='Link de Download do App',
+        help_text="URL completa para o arquivo do aplicativo (APK, loja, etc.)."
     )
     history_text = models.TextField(
         verbose_name="Texto da página 'Sobre'",
@@ -164,6 +197,15 @@ class UserLevel(models.Model):
     level = models.ForeignKey(Level, on_delete=models.CASCADE, verbose_name="Nível")
     purchase_date = models.DateTimeField(auto_now_add=True, verbose_name="Data da Compra")
     is_active = models.BooleanField(default=True, verbose_name="Ativo")
+    
+    # --- NOVO CAMPO ADICIONADO PARA O CICLO DE 24 HORAS ---
+    last_daily_gain_date = models.DateTimeField(
+        null=True, 
+        blank=True, 
+        verbose_name="Data do Último Ganho Diário",
+        help_text="O tempo em que o último ganho de 24 horas foi aplicado. Nulo na primeira compra."
+    )
+    # --- FIM NOVO CAMPO ---
 
     class Meta:
         verbose_name = "Nível do Usuário"
@@ -173,18 +215,65 @@ class UserLevel(models.Model):
         return f"{self.user.phone_number} - {self.level.name}"
 
 # ---
+# --- NOVO MODELO PARA DEFINIR AS TAREFAS ---
+class TaskDefinition(models.Model):
+    """
+    Define o que é uma tarefa, seu valor de ganho, e se ela é diária.
+    """
+    name = models.CharField(max_length=100, verbose_name="Nome da Tarefa")
+    description = models.TextField(verbose_name="Descrição")
+    base_earnings = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        verbose_name="Ganho Base"
+    )
+    is_daily = models.BooleanField(
+        default=True, 
+        verbose_name="É Diária?",
+        help_text="Se marcado, o usuário só pode completar esta tarefa uma vez por dia."
+    )
+    # Relação opcional: Se a tarefa requer um nível mínimo (e.g., VIP 1)
+    required_level = models.ForeignKey(
+        Level, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        verbose_name="Nível Requerido"
+    )
 
+    class Meta:
+        verbose_name = "Definição de Tarefa"
+        verbose_name_plural = "Definições de Tarefas"
+
+    def __str__(self):
+        return self.name
+# --- FIM NOVO MODELO ---
+
+
+# --- MODELO TASK ATUALIZADO ---
 class Task(models.Model):
+    """
+    Registra a conclusão de uma tarefa por um usuário, ligada a uma definição.
+    Essa ligação é crucial para a lógica regressiva/diária.
+    """
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, verbose_name="Usuário")
-    earnings = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Ganhos")
+    # Agora a tarefa completeda se relaciona com uma definição (TaskDefinition)
+    task_definition = models.ForeignKey(
+        TaskDefinition, 
+        on_delete=models.PROTECT, # Garante que a definição não seja apagada se houver registros
+        verbose_name="Definição da Tarefa"
+    )
+    # Os ganhos podem ser registrados aqui (para auditoria, mesmo que sejam baseados na definição)
+    earnings = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Ganhos Registrados") 
     completed_at = models.DateTimeField(auto_now_add=True, verbose_name="Data de Conclusão")
 
     class Meta:
-        verbose_name = "Tarefa"
-        verbose_name_plural = "Tarefas"
+        verbose_name = "Tarefa Concluída"
+        verbose_name_plural = "Tarefas Concluídas"
 
     def __str__(self):
-        return f"Tarefa de {self.user.phone_number} em {self.completed_at}"
+        return f"Conclusão de '{self.task_definition.name}' por {self.user.phone_number}"
+# --- FIM MODELO TASK ATUALIZADO ---
 
 # ---
 

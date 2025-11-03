@@ -1,323 +1,591 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Saque Personalizado{% endblock %}
+{% block title %}Área de Levantamento - Estilo App Financeiro{% endblock %}
 
 {% block content %}
-<div class="page-header-custom">
-    <h1>💸 ÁREA DE LEVANTAMENTO 💸</h1>
+<div class="page-header-app">
+    <div class="header-content">
+        <i class="fas fa-money-check-alt header-icon"></i>
+        <h1>ATM</h1>
+    </div>
 </div>
 
-<div class="saque-container-custom">
+<div class="app-container-finance">
     {# Área de Mensagens Django #}
     {% if messages %}
-        <ul class="messages-custom">
+        <ul class="messages-app-finance">
             {% for message in messages %}
-                <li class="{% if message.tags %}{{ message.tags }}{% else %}info{% endif %}">{{ message }}</li>
+                <li class="{% if message.tags %}{{ message.tags }}{% else %}info{% endif %}"><i class="fas fa-bell"></i> {{ message }}</li>
             {% endfor %}
         </ul>
     {% endif %}
 
-    {# Estrutura de Abas (Tabs) #}
-    <div class="tabs-navigation">
-        <button class="tab-button active" onclick="openTab(event, 'informacoes')">
-            <i class="fas fa-info-circle"></i> Informações
-        </button>
-        <button class="tab-button" onclick="openTab(event, 'realizar-saque')">
-            <i class="fas fa-money-check-alt"></i> Realizar Saque
-        </button>
-        <button class="tab-button" onclick="openTab(event, 'historico')">
-            <i class="fas fa-history"></i> Histórico
-        </button>
-    </div>
-
-    <div class="tabs-content">
-        {# 1º Separador: Informações Importantes (Exemplo: 1 seprado onde vai aparecer as informações quando é clicado) #}
-        <div id="informacoes" class="tab-pane active">
-            <div class="info-box-custom">
-                <h3>Regras de Levantamento</h3>
-                <p><i class="fas fa-clock"></i> Saque 24/24h</p>
-                <p><i class="fas fa-dollar-sign"></i> Saque mínimo: 14 $</p>
-                <p><i class="fas fa-percent"></i> Imposto de Transacção: 13%</p>
-                <p><i class="fas fa-hourglass-half"></i> **Processamento de saque:** 0 - 24h</p>
-                <p><i class="fas fa-globe"></i> Faça Alevantamento em R$, e receba na sua moeda local</p>
-            </div>
-            <div class="alert-box warning">
-                <p><i class="fas fa-exclamation-triangle"></i> **ATENÇÃO:** Verifique as regras e os seus dados de pagamento antes de confirmar.</p>
-            </div>
+    <div class="main-workspace">
+        {# 🧭 Navegação de Abas (Separadores) Vertical na Esquerda - APENAS ÍCONES #}
+        <div class="tabs-navigation-sidebar">
+            <button class="tab-icon-button active" onclick="openTab(event, 'informacoes')" aria-label="Regras de Levantamento">
+                <i class="fas fa-balance-scale"></i>
+                <span class="tooltip">Regras</span>
+            </button>
+            <button class="tab-icon-button" onclick="openTab(event, 'realizar-saque')" aria-label="Realizar Novo Saque">
+                <i class="fas fa-exchange-alt"></i>
+                <span class="tooltip">Novo Saque</span>
+            </button>
+            <button class="tab-icon-button" onclick="openTab(event, 'historico')" aria-label="Histórico de Saques">
+                <i class="fas fa-list-alt"></i>
+                <span class="tooltip">Histórico</span>
+            </button>
         </div>
 
-        {# 2º Separador: Área para Digitar Valor de Saque (Exemplo: 2 separador, onde vai aparecer apenas local para digitar valor de saque) #}
-        <div id="realizar-saque" class="tab-pane">
-            <form method="post" class="saque-form-custom">
-                {% csrf_token %}
-                <div class="form-group-custom">
-                    <label for="{{ form.amount.id_for_label }}"><i class="fas fa-calculator"></i> Valor a Sacar ($):</label>
-                    {# Campo do formulário Django (Lógica mantida) #}
-                    {{ form.amount }} 
+        <div class="tabs-content-area-finance">
+            
+            {# 1º Separador: Informações Importantes #}
+            <div id="informacoes" class="tab-pane active">
+                <div class="card-balance">
+                    <i class="fas fa-wallet card-icon"></i>
+                    <p class="balance-label">Seu Saldo Disponível</p>
+                    <p class="balance-amount">{{ user.available_balance|default:"0.00" }} KZ</p>
                 </div>
-                <button type="submit" class="saque-button-custom">
-                    <i class="fas fa-paper-plane"></i> CONFIRMAR SAQUE
-                </button>
-            </form>
-        </div>
+                
+                <div class="card-rules-list">
+                    <h3><i class="fas fa-cogs"></i> Regulamento de Saque</h3>
+                    <div class="rule-item-finance">
+                        <i class="fas fa-money-bill-wave icon-rule-purple"></i> 
+                        <p>Mínimo por Saque:</p> <strong>{{ min_withdrawal_amount|default:"2000.00" }} KZ</strong>
+                    </div>
+                    <div class="rule-item-finance">
+                        <i class="fas fa-calendar-day icon-rule-purple"></i> 
+                        <p>Frequência Máxima:</p> <strong>1 Saque por Dia</strong>
+                    </div>
+                    <div class="rule-item-finance">
+                        <i class="fas fa-clock icon-rule-purple"></i> 
+                        <p>Horário Permitido:</p> <strong>09:00h às 18:00h (GMT+1)</strong>
+                    </div>
+                    <div class="rule-item-finance">
+                        <i class="fas fa-percent icon-rule-purple"></i> 
+                        <p>Taxa de Transacção:</p> <strong>13% (Se aplicável)</strong>
+                    </div>
+                </div>
 
-        {# 3º Separador: Histórico de Saques (Exemplo: 3 separado onde vai aparecer historico de saque, aprova, petende, e rejeitado) #}
-        <div id="historico" class="tab-pane">
-            <h3>Histórico de Transações</h3>
-            {% if withdrawal_records %}
-                <div class="history-list">
-                    {% for record in withdrawal_records %}
-                        <div class="withdrawal-item-custom">
-                            <div class="item-details">
-                                <span class="amount-saque"><i class="fas fa-minus-circle"></i> {{ record.amount|default:"0.00" }} $</span>
-                                <span class="date-saque">{{ record.created_at|date:"d/m/Y H:i" }}</span>
+                {# Alerta de Detalhes Bancários #}
+                {% if has_bank_details %}
+                    <div class="alert-box-finance success-border">
+                        <i class="fas fa-check-circle"></i> <strong>Pronto!</strong> Seus dados bancários estão configurados.
+                    </div>
+                {% else %}
+                    <div class="alert-box-finance error-border">
+                        <i class="fas fa-times-circle"></i> <strong>Ação Necessária!</strong> Configure seu <a href="{% url 'perfil' %}" class="link-action">Perfil</a> para receber o pagamento.
+                    </div>
+                {% endif %}
+            </div>
+
+            {# 2º Separador: Formulário de Saque #}
+            <div id="realizar-saque" class="tab-pane">
+                {% if already_withdrawn_today or not is_time_allowed or not has_bank_details %}
+                    <div class="card-message-overlay">
+                        <i class="fas fa-lock"></i>
+                        <p>Não é possível solicitar o saque agora devido às seguintes condições:</p>
+                        <ul>
+                            {% if already_withdrawn_today %}<li><i class="fas fa-exclamation-triangle"></i> Limite de saque diário atingido.</li>{% endif %}
+                            {% if not is_time_allowed %}<li><i class="fas fa-exclamation-triangle"></i> Fora do horário de processamento (09h - 18h).</li>{% endif %}
+                            {% if not has_bank_details %}<li><i class="fas fa-exclamation-triangle"></i> Dados bancários pendentes.</li>{% endif %}
+                        </ul>
+                    </div>
+                {% else %}
+                    <form method="post" class="saque-form-app">
+                        {% csrf_token %}
+                        <div class="form-group-app">
+                            <label for="{{ form.amount.id_for_label }}">Valor a Levantar (KZ)</label>
+                            <div class="input-icon-wrapper">
+                                <i class="fas fa-money-check-alt"></i>
+                                <input type="number" 
+                                       name="{{ form.amount.name }}" 
+                                       id="{{ form.amount.id_for_label }}" 
+                                       placeholder="Mínimo: {{ min_withdrawal_amount|default:'2000' }} KZ" 
+                                       min="{{ min_withdrawal_amount|default:'2000' }}" 
+                                       step="0.01"
+                                       required>
                             </div>
-                            {# Lógica de Status Django Mantida e Estilizada #}
-                            <span class="status-badge status-{{ record.status|lower|slugify }}">
-                                {% if record.status == 'Aprovado' %}
-                                    <i class="fas fa-check-circle"></i> Aprovado
-                                {% elif record.status == 'Pendente' or record.status == 'Pending' %}
-                                    <i class="fas fa-hourglass-start"></i> Pendente
-                                {% elif record.status == 'Rejeitado' or record.status == 'Rejected' %}
-                                    <i class="fas fa-times-circle"></i> Rejeitado
-                                {% else %}
-                                    {{ record.status }}
-                                {% endif %}
-                            </span>
                         </div>
-                    {% endfor %}
+                        
+                        <button type="submit" class="button-submit-app">
+                            <i class="fas fa-paper-plane"></i> SOLICITAR
+                        </button>
+                        
+                        <p class="note-saque"><i class="fas fa-info-circle"></i> Processamento em até 24 horas úteis. Garanta que seus dados estão corretos.</p>
+                    </form>
+                {% endif %}
+            </div>
+
+            {# 3º Separador: Histórico de Saques #}
+            <div id="historico" class="tab-pane">
+                <div class="card-history">
+                    <h2><i class="fas fa-chart-line"></i> Suas Últimas Transações</h2>
+                    {% if withdrawal_records %}
+                        <div class="history-list-app">
+                            {% for record in withdrawal_records %}
+                                <div class="transaction-item status-{{ record.status|lower|slugify }}">
+                                    <div class="icon-status">
+                                        {% if record.status == 'Aprovado' %}<i class="fas fa-check-circle"></i>
+                                        {% elif record.status == 'Pendente' or record.status == 'Pending' %}<i class="fas fa-hourglass-start"></i>
+                                        {% else %}<i class="fas fa-times-circle"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div class="transaction-details">
+                                        <span class="transaction-type">Levantamento</span>
+                                        <span class="transaction-date">{{ record.created_at|date:"d/m/Y H:i" }}</span>
+                                    </div>
+                                    <span class="transaction-amount">- {{ record.amount|default:"0.00" }} KZ</span>
+                                    <span class="status-tag">
+                                        {% if record.status == 'Aprovado' %}Aprovado
+                                        {% elif record.status == 'Pendente' or record.status == 'Pending' %}Pendente
+                                        {% elif record.status == 'Rejeitado' or record.status == 'Rejected' %}Rejeitado
+                                        {% else %}{{ record.status }}
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert-box-finance info-border">
+                            <i class="fas fa-info-circle"></i> Não há registros de saques recentes.
+                        </div>
+                    {% endif %}
                 </div>
-            {% else %}
-                <div class="alert-box info">
-                    <p><i class="fas fa-info-circle"></i> Nenhum histórico de saque encontrado.</p>
-                </div>
-            {% endif %}
+            </div>
         </div>
     </div>
 </div>
 
----
-
-🎨  الراتب مستحق لمن يعمل كل يوم
-
 <style>
-    /* Estilos Globais e Reset */
-    .page-header-custom {
-        text-align: center;
-        padding: 20px 0;
-        background-color: #1c273a; /* Azul Escuro */
-        border-bottom: 3px solid #00c6ff; /* Destaque em Azul Neon */
-        margin-bottom: 20px;
-    }
-    .page-header-custom h1 {
-        color: #fff;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        font-size: 2.5rem;
-        letter-spacing: 1px;
-    }
-    .saque-container-custom {
-        background-color: #212d40; /* Fundo Principal do Card */
-        padding: 30px;
-        border-radius: 12px;
-        margin: 20px auto;
-        max-width: 600px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-        border: 1px solid #3d4a63;
-        color: #e0e0e0;
-    }
-    .saque-container-custom h3 {
-        color: #00c6ff; /* Títulos em Azul Neon */
-        font-size: 1.5rem;
-        border-bottom: 1px solid #3d4a63;
-        padding-bottom: 10px;
-        margin-bottom: 20px;
-    }
+    /* --- V3.0: Estilos de App Financeiro com Fundo Branco --- */
+    /* Cores: Roxo (#6a11cb), Azul Claro (#00c6ff), Verde (#2ecc71) */
 
-    /* --- 🧭 Navegação de Abas (Separadores) --- */
-    .tabs-navigation {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 20px;
-        border-bottom: 2px solid #3d4a63;
-    }
-    .tab-button {
-        flex-grow: 1;
-        background-color: transparent;
-        color: #99a2b5;
-        border: none;
-        padding: 15px 10px;
-        cursor: pointer;
-        font-size: 1rem;
-        font-weight: 600;
-        transition: color 0.3s, border-bottom 0.3s;
-        border-bottom: 3px solid transparent;
-        outline: none;
-    }
-    .tab-button:hover {
-        color: #fff;
-        background-color: #283a54;
-    }
-    .tab-button.active {
-        color: #00c6ff; /* Cor da aba ativa */
-        border-bottom: 3px solid #00c6ff;
-    }
-    .tab-pane {
-        display: none; /* Esconde todas as abas por padrão */
-        padding-top: 20px;
-    }
-    .tab-pane.active {
-        display: block; /* Mostra a aba ativa */
-    }
-
-    /* --- 1º Separador: Informações --- */
-    .info-box-custom {
-        background-color: #283a54; /* Fundo mais escuro */
-        padding: 20px;
-        border-radius: 8px;
-        margin-bottom: 20px;
-    }
-    .info-box-custom p {
-        margin: 10px 0;
-        font-size: 1rem;
-        border-left: 3px solid #00c6ff;
-        padding-left: 10px;
-    }
-    .info-box-custom i {
-        margin-right: 8px;
-        color: #00c6ff;
-    }
-    .alert-box {
-        padding: 15px;
-        border-radius: 6px;
-        margin-bottom: 15px;
-        font-size: 0.95rem;
-    }
-    .alert-box.warning {
-        background-color: #ff980033;
-        border: 1px solid #ff9800;
-        color: #ff9800;
-    }
-    .alert-box.info {
-        background-color: #00c6ff33;
-        border: 1px solid #00c6ff;
-        color: #00c6ff;
-    }
-
-    /* --- 2º Separador: Formulário de Saque --- */
-    .form-group-custom label {
-        display: block;
-        color: #00c6ff;
-        margin-bottom: 10px;
-        font-weight: 600;
-    }
-    .form-group-custom input {
-        width: 100%;
-        padding: 12px;
-        border-radius: 6px;
-        border: 1px solid #3d4a63;
-        background-color: #1c273a; 
-        color: #fff;
-        font-size: 1.2rem;
-        box-sizing: border-box;
-    }
-    .saque-button-custom {
-        width: 100%;
-        padding: 15px 20px;
-        background-color: #4CAF50; /* Verde de Ação */
-        color: #fff;
-        border: none;
-        border-radius: 6px;
-        font-weight: bold;
-        font-size: 1.2rem;
-        cursor: pointer;
-        transition: background-color 0.3s, transform 0.1s;
-        margin-top: 20px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    }
-    .saque-button-custom:hover {
-        background-color: #388e3c;
-        transform: translateY(-2px);
-    }
-
-    /* --- 3º Separador: Histórico --- */
-    .history-list {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-    .withdrawal-item-custom {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 15px;
-        background-color: #283a54;
-        border-radius: 8px;
-        transition: background-color 0.2s;
-    }
-    .withdrawal-item-custom:hover {
-        background-color: #3d4a63;
-    }
-    .item-details {
-        display: flex;
-        flex-direction: column;
-    }
-    .amount-saque {
-        font-weight: bold;
-        color: #f44336; /* Cor de Destaque para Saque (Vermelho Suave) */
-        font-size: 1.1rem;
-    }
-    .date-saque {
-        color: #99a2b5;
-        font-size: 0.85rem;
-    }
-    
-    /* Status Badges */
-    .status-badge {
-        padding: 5px 10px;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        min-width: 100px; /* Para manter o alinhamento */
-        text-align: center;
-    }
-    .status-aprovado, .status-approved {
-        background-color: #4CAF50; /* Verde */
-        color: #fff;
-    }
-    .status-pendente, .status-pending {
-        background-color: #FFC107; /* Amarelo */
+    /* Estrutura Base */
+    body {
+        background-color: #f4f6f9; /* Fundo branco/cinza muito claro */
+        font-family: 'Open Sans', sans-serif;
         color: #333;
     }
-    .status-rejeitado, .status-rejected {
-        background-color: #f44336; /* Vermelho */
+    a {
+        text-decoration: none;
+        color: #6a11cb;
+        font-weight: 600;
+        transition: color 0.3s;
+    }
+    h1, h2, h3 {
+        color: #2c3e50;
+    }
+
+    /* Cabeçalho */
+    .page-header-app {
+        background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%); /* Gradiente Roxo/Azul */
+        padding: 40px 0;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+    .header-content {
+        max-width: 900px;
+        margin: 0 auto;
+        text-align: center;
+    }
+    .page-header-app h1 {
+        color: #fff;
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin: 10px 0 0;
+        letter-spacing: 1px;
+    }
+    .header-icon {
+        color: #fff;
+        font-size: 3rem;
+        text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+    }
+
+    /* Container Principal da Aplicação */
+    .app-container-finance {
+        max-width: 900px;
+        margin: -40px auto 30px; /* Sobrepõe o cabeçalho ligeiramente */
+        background-color: #ffffff;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    .main-workspace {
+        display: flex;
+        min-height: 500px;
+    }
+
+    /* --- Navegação Lateral (Sidebar) --- */
+    .tabs-navigation-sidebar {
+        flex: 0 0 80px; /* Largura estreita para apenas ícones */
+        background-color: #2c3e50;
+        padding: 20px 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .tab-icon-button {
+        position: relative;
+        background: none;
+        border: none;
+        color: #c0c9d7;
+        padding: 20px 0;
+        cursor: pointer;
+        font-size: 1.4rem;
+        width: 100%;
+        transition: background-color 0.3s, color 0.3s;
+        text-align: center;
+    }
+    .tab-icon-button:hover {
+        background-color: #34495e;
         color: #fff;
     }
-    
-    /* Mensagens de Feedback */
-    .messages-custom {
-        list-style-type: none;
-        padding: 0;
-        margin-bottom: 20px;
+    .tab-icon-button.active {
+        background-color: #6a11cb;
+        color: #fff;
+        border-left: 5px solid #00c6ff; /* Destaque em azul vibrante */
+        box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.2);
     }
-    .messages-custom li {
-        padding: 12px;
-        margin-bottom: 10px;
+    /* Tooltip (Label) - Aparece ao lado do ícone */
+    .tooltip {
+        visibility: hidden;
+        width: 120px;
+        background-color: #555;
+        color: #fff;
+        text-align: center;
         border-radius: 6px;
+        padding: 5px 0;
+        position: absolute;
+        z-index: 1;
+        top: 50%;
+        left: 100%; /* Posiciona à direita do botão */
+        margin-top: -15px;
+        margin-left: 10px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        font-size: 0.9rem;
+    }
+    .tab-icon-button:hover .tooltip {
+        visibility: visible;
+        opacity: 1;
+    }
+
+    /* Área de Conteúdo */
+    .tabs-content-area-finance {
+        flex: 1;
+        padding: 30px;
+        background-color: #ffffff;
+    }
+    .tab-pane {
+        display: none;
+    }
+    .tab-pane.active {
+        display: block;
+    }
+
+    /* --- 1. Informações de Regras --- */
+    .card-balance {
+        background: linear-gradient(45deg, #6a11cb, #2575fc);
+        padding: 30px;
+        border-radius: 12px;
         color: #fff;
-        font-weight: 500;
+        text-align: center;
+        margin-bottom: 30px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
     }
-    .messages-custom .success {
-        background-color: #4CAF50;
+    .card-icon {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
     }
-    .messages-custom .error {
-        background-color: #f44336;
+    .balance-label {
+        opacity: 0.8;
+        font-size: 1rem;
+        margin: 0;
+    }
+    .balance-amount {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 5px 0 0;
+        text-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+    }
+
+    .card-rules-list h3 {
+        font-size: 1.3rem;
+        margin-bottom: 20px;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+    }
+    .rule-item-finance {
+        display: grid;
+        grid-template-columns: 20px 1fr auto;
+        align-items: center;
+        gap: 15px;
+        padding: 12px 0;
+        border-bottom: 1px dashed #f0f0f0;
+    }
+    .rule-item-finance p {
+        margin: 0;
+        color: #555;
+    }
+    .rule-item-finance strong {
+        color: #6a11cb;
+        font-weight: 700;
+    }
+    .icon-rule-purple {
+        color: #6a11cb;
+        font-size: 1.1rem;
+    }
+
+    /* Alertas de Status */
+    .alert-box-finance {
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-top: 20px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+    .success-border {
+        border-left: 5px solid #2ecc71;
+        background-color: #e8f9ed;
+        color: #2ecc71;
+    }
+    .error-border {
+        border-left: 5px solid #e74c3c;
+        background-color: #fce7e7;
+        color: #e74c3c;
+    }
+    .link-action {
+        color: #6a11cb;
+        text-decoration: underline;
+    }
+
+    /* --- 2. Formulário de Saque --- */
+    .saque-form-app {
+        padding: 20px;
+        background-color: #fcfcfc;
+        border: 1px solid #eee;
+        border-radius: 12px;
+    }
+    .form-group-app {
+        margin-bottom: 30px;
+    }
+    .form-group-app label {
+        display: block;
+        color: #555;
+        font-weight: 600;
+        margin-bottom: 10px;
+        font-size: 1rem;
+    }
+    .input-icon-wrapper {
+        position: relative;
+    }
+    .input-icon-wrapper i {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6a11cb;
+        font-size: 1.3rem;
+    }
+    .input-icon-wrapper input {
+        width: 100%;
+        padding: 18px 20px 18px 50px; /* Aumenta o padding para o ícone */
+        border-radius: 8px;
+        border: 2px solid #ddd;
+        background-color: #fff;
+        color: #2c3e50;
+        font-size: 1.5rem;
+        font-weight: 700;
+        transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    .input-icon-wrapper input:focus {
+        border-color: #6a11cb;
+        box-shadow: 0 0 10px rgba(106, 17, 203, 0.2);
+        outline: none;
+    }
+    .button-submit-app {
+        width: 100%;
+        padding: 15px 20px;
+        background: linear-gradient(90deg, #2ecc71, #27ae60);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-weight: bold;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+    .button-submit-app:hover {
+        background: linear-gradient(90deg, #27ae60, #2ecc71);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(46, 204, 113, 0.6);
+    }
+    .note-saque {
+        text-align: center;
+        margin-top: 20px;
+        color: #7f8c8d;
+        font-size: 0.9rem;
+    }
+
+    /* Mensagem de Bloqueio (Overlay no formulário) */
+    .card-message-overlay {
+        text-align: center;
+        padding: 40px 20px;
+        background-color: #fff0f0;
+        border: 2px dashed #e74c3c;
+        border-radius: 12px;
+    }
+    .card-message-overlay i {
+        font-size: 3rem;
+        color: #e74c3c;
+        margin-bottom: 15px;
+    }
+    .card-message-overlay p {
+        font-size: 1.1rem;
+        color: #e74c3c;
+    }
+    .card-message-overlay ul {
+        list-style: none;
+        padding: 0;
+        margin-top: 15px;
+        text-align: left;
+        display: inline-block;
+    }
+    .card-message-overlay li {
+        margin-top: 5px;
+        color: #c0392b;
+    }
+
+    /* --- 3. Histórico de Saques --- */
+    .card-history h2 {
+        font-size: 1.3rem;
+        margin-bottom: 20px;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+    }
+    .history-list-app {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .transaction-item {
+        display: flex;
+        align-items: center;
+        padding: 15px;
+        background-color: #fcfcfc;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        transition: transform 0.2s;
+    }
+    .transaction-item:hover {
+        transform: scale(1.01);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    .icon-status {
+        font-size: 1.5rem;
+        margin-right: 15px;
+    }
+    .transaction-item.status-aprovado .icon-status, .transaction-item.status-approved .icon-status { color: #2ecc71; }
+    .transaction-item.status-pendente .icon-status, .transaction-item.status-pending .icon-status { color: #f39c12; }
+    .transaction-item.status-rejeitado .icon-status, .transaction-item.status-rejected .icon-status { color: #e74c3c; }
+
+    .transaction-details {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    .transaction-type {
+        font-weight: 600;
+        color: #2c3e50;
+    }
+    .transaction-date {
+        font-size: 0.85rem;
+        color: #7f8c8d;
+    }
+    .transaction-amount {
+        font-weight: 700;
+        color: #e74c3c; /* Vermelho para saque */
+        font-size: 1.1rem;
+        margin-right: 15px;
+    }
+    .status-tag {
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+    .status-aprovado, .status-approved { background-color: #d4edda; color: #155724; }
+    .status-pendente, .status-pending { background-color: #fff3cd; color: #856404; }
+    .status-rejeitado, .status-rejected { background-color: #f8d7da; color: #721c24; }
+
+    /* --- Responsividade (Garante Boa Resolução) --- */
+    @media (max-width: 768px) {
+        .page-header-app h1 {
+            font-size: 1.8rem;
+        }
+        .app-container-finance {
+            margin: -40px 10px 30px; /* Margem lateral em mobile */
+        }
+        .main-workspace {
+            flex-direction: column; /* Empilha a sidebar e o conteúdo */
+        }
+        .tabs-navigation-sidebar {
+            flex: none;
+            flex-direction: row; /* Volta a ser horizontal */
+            width: 100%;
+            height: auto;
+            border-bottom: 2px solid #6a11cb;
+        }
+        .tab-icon-button {
+            flex: 1; /* Ocupa igual espaço */
+            padding: 15px 0;
+            border-left: none !important;
+        }
+        .tab-icon-button.active {
+            border-left: none;
+            border-bottom: 3px solid #00c6ff; /* Destaque na parte inferior */
+        }
+        .tooltip {
+            display: none; /* Esconde tooltips em mobile */
+        }
+        .tabs-content-area-finance {
+            padding: 20px;
+        }
+        .rule-item-finance {
+            grid-template-columns: 20px 1fr 1fr; /* Ajusta grid de regras */
+            gap: 10px;
+        }
+        .transaction-item {
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .transaction-amount {
+            order: 3; /* Move o valor para baixo em mobile */
+            width: 100%;
+            text-align: right;
+            margin-right: 0;
+        }
+        .status-tag {
+            order: 4; /* Move o status para baixo */
+        }
     }
 </style>
 
 <script>
-    // Função JavaScript para controlar a troca de abas
+    // Função JavaScript para controlar a troca de abas (Mantida a lógica original)
     function openTab(evt, tabName) {
         var i, tabcontent, tablinks;
 
@@ -328,7 +596,7 @@
         }
 
         // 2. Remove a classe 'active' de todos os botões de aba
-        tablinks = document.getElementsByClassName("tab-button");
+        tablinks = document.getElementsByClassName("tab-icon-button");
         for (i = 0; i < tablinks.length; i++) {
             tablinks[i].className = tablinks[i].className.replace(" active", "");
         }
@@ -340,8 +608,7 @@
 
     // Inicializa a página abrindo a primeira aba ('informacoes')
     document.addEventListener("DOMContentLoaded", function() {
-        // Assegura que pelo menos um botão de aba existe antes de tentar clicar
-        const firstTabButton = document.querySelector(".tab-button");
+        const firstTabButton = document.querySelector(".tab-icon-button");
         if (firstTabButton) {
             firstTabButton.click();
         }

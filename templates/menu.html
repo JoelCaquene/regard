@@ -5,161 +5,116 @@
 
 {% block content %}
 
+{# POP-UP DE BOAS-VINDAS: Mantido #}
 <div id="welcomePopup" class="popup-overlay">
     <div class="popup-content">
         <div class="popup-header">
-            <img src="{% static 'images/popup_welcome_image.jpg' %}" alt="Bem-vindo à Saudi Aramco" class="popup-image">
+            {# Você deve fornecer a imagem 'popup_welcome_image.jpg' no seu static/images/ #}
+            <img src="{% static 'images/placeholder_1.jpg' %}" alt="Bem-vindo" class="popup-image">
         </div>
         <div class="popup-body">
-            <h2 class="popup-title">INFORMAÇÕES</h2>
-            <p class="popup-text">
-                **Saudi Aramco**, é uma das maiores empresas integradas de energia e produtos químicos do mundo, com sede em Dhahran, Arábia Saudita.
-                Atuamos em Seguintes país, Arábia Saudita, Brasil, Portugal, Moçambique, Angola, em forma Virtual. 
+            <h2 class="popup-title">SEJA BEM VINDO (A)</h2>
+            <p class="popup-text welcome-text">
+                Siga os nossos canais!
             </p>
-            
-            </p> ✨Taxa de saque✨: 13%; ✨Ganho de convite✨: 11$; ✨Horario de saque✨: 24/24; ✨Duração de saque✨: 0 - 24 horas; ✨Sorteio em todos Domingos✨
-            </p>
-
-            </p>Metódos de deposito e Processamento de saque: Bancos (Agências), Entidade por referências, Visa, Binance.
-            </p>
-            <p class="popup-text disclaimer">
-                FORME A SUA EQUIPA, E GANHE SORTEIO, E $ 581  DE REALIZAR REÚNIÕES OFFLINE E SALÁRIO MENSAL
-            </p>
+            <div class="social-links">
+                {% if whatsapp_link %}
+                    <a href="{{ whatsapp_link }}" target="_blank" class="social-button whatsapp-social">
+                        <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                    </a>
+                {% endif %}
+                {% if telegram_link %}
+                    <a href="{{ telegram_link }}" target="_blank" class="social-button telegram-social">
+                        <i class="fa-brands fa-telegram"></i> Telegram
+                    </a>
+                {% endif %}
+            </div>
             <button id="closePopup" class="popup-close-button">Continuar</button>
         </div>
     </div>
 </div>
-<header class="menu-header">
-    <h1 class="platform-name">Saudi Aramco</h1>
-    {% if whatsapp_link %}
-        <a href="{{ whatsapp_link }}" class="support-button">
-            <i class="fa-brands fa-whatsapp"></i> 
-            <span>Apoio</span>
-        </a>
-    {% endif %}
-</header>
 
-<div class="image-gallery">
+{# 1. IMAGEM DO CARROSSEL: No topo #}
+<div class="image-gallery top-position">
     <div class="image-slider">
         <img src="{% static 'images/placeholder_1.jpg' %}" alt="Imagem da Plataforma 1" class="active">
         <img src="{% static 'images/placeholder_2.jpg' %}" alt="Imagem da Plataforma 2">
     </div>
 </div>
 
-<div class="buttons-grid">
-    <a href="{% url 'deposito' %}" class="grid-item">
-        <div class="icon-container">
-            <img src="{% static 'icons/deposito.png' %}" alt="Depósito">
-        </div>
-        <span>Depósito</span>
-    </a>
-    <a href="{% url 'saque' %}" class="grid-item">
-        <div class="icon-container">
-            <img src="{% static 'icons/saque.png' %}" alt="Saque">
-        </div>
-        <span>Saque</span>
-    </a>
-    <a href="{% url 'tarefa' %}" class="grid-item">
-        <div class="icon-container">
-            <img src="{% static 'icons/tarefa.png' %}" alt="Tarefa">
-        </div>
-        <span>Tarefa</span>
-    </a>
-    
-    {# Substituição de 'Sobre' por 'Perfil' (Quarta e última posição da grade) #}
-    <a href="{% url 'perfil' %}" class="grid-item">
-        <div class="icon-container">
-            <img src="{% static 'icons/perfil.png' %}" alt="Perfil"> 
-        </div>
-        <span>Perfil</span>
-    </a>
-    
-    {# OS OUTROS BOTÕES FORAM REMOVIDOS PARA MANTER APENAS 4 NA GRADE #}
+{# FAIXA DE NOTIFICAÇÃO (MARQUEE) #}
+<div class="notification-marquee-wrapper">
+    <div class="notification-icon">
+        <i class="fa-solid fa-bullhorn"></i>
+    </div>
+    <div class="marquee-text-container">
+        <p class="marquee-text">
+            REGARD É UMA INSTITUIÇÃO PREOCUPADO COM O BEM ESTAR SOCIAL, E ECONÔMICA DA POPULAÇÃO EM GERAL.
+        </p>
+    </div>
 </div>
 
-{# Bloco de texto traduzido e imagens em formato banner (100% largura) #}
-<div class="vip-section custom-section">
-    <div class="content-block">
-        
-        {# PRIMEIRA SUB-SEÇÃO: Quem somos? #}
-        <div class="sub-section">
-            <div class="full-width-image-container">
-                <img src="{% static 'images/about_us_icon.png' %}" alt="Quem somos? Imagem principal" class="full-width-image"> 
+{# CONTAINER PRINCIPAL: para acomodar botões laterais e a roleta #}
+<div class="main-layout-content">
+    
+    {# BOTÕES DE AÇÃO LATERAIS (Vertical) - AGORA COM CORES INDIVIDUAIS E MENOS ALTURA #}
+    <div class="action-buttons-lateral">
+        <a href="{% url 'deposito' %}" class="lateral-item deposit-btn color-deposito">
+            <div class="icon-container-lateral">
+                <i class="fa-solid fa-sack-dollar"></i>
             </div>
-            
-            <div class="header">
-                <h2>Quem somos?</h2>
+            <span>Depósito</span>
+        </a>
+        <a href="{% url 'saque' %}" class="lateral-item withdraw-btn color-saque">
+            <div class="icon-container-lateral">
+                <i class="fa-solid fa-arrow-right-to-bracket"></i>
             </div>
-            <p>
-                A Saudi Aramco (formalmente Saudi Arabian Oil Company) é a empresa estatal de petróleo e gás natural da Arábia Saudita.
-            </p>
-            <p>
-                É uma das maiores companhias integradas de energia e produtos químicos do mundo, com sede em Dhahran, Arábia Saudita.
-            </p>
-            <p>
-                Opera a maior rede mundial de hidrocarbonetos (o Master Gas System) e tem um papel central no fornecimento de energia global há mais de 90 anos.
-            </p>
-            <p>
-                É historicamente reconhecida por ter uma das maiores reservas de petróleo e uma das maiores produções de petróleo cru do mundo.
-            </p>
-            <p class="summary">
-            </p>
-        </div>
-        
-        {# SEGUNDA SUB-SEÇÃO: Objetivo? #}
-        <div class="sub-section">
-             <div class="full-width-image-container">
-                <img src="{% static 'images/goal_icon.png' %}" alt="Objetivo? Imagem principal" class="full-width-image"> 
+            <span>Saque</span>
+        </a>
+        <a href="{% url 'tarefa' %}" class="lateral-item task-btn color-tarefa">
+            <div class="icon-container-lateral">
+                <i class="fa-solid fa-pen-to-square"></i>
             </div>
-            <div class="header">
-                <h2>Objetivo?</h2>
+            <span>Tarefa</span>
+        </a>
+        <a href="{% url 'perfil' %}" class="lateral-item profile-btn color-perfil">
+            <div class="icon-container-lateral">
+                <i class="fa-solid fa-user-circle"></i>
             </div>
-            <p>
-                O principal objetivo é fornecer a energia vital para impulsionar o comércio global, as empresas e o progresso em todo o mundo.
-            </p>
-            <p>
-                Maximizar o valor de seus recursos de hidrocarbonetos e, ao mesmo tempo, investir no crescimento e inovar para maior sustentabilidade.
-            </p>
-            <p>
-                Manter sua posição como a maior empresa de petróleo cru do mundo em volume de produção e um dos produtores de menor custo.
-            </p>
-            <p>
-                Diversificar e expandir para as áreas de refino e produtos químicos (Downstream) e investir em iniciativas de baixo carbono e tecnologias como Captura e Armazenamento de Carbono (CCUS) e hidrogênio.
-            </p>
-            <p>
-                Apoiar a economia da Arábia Saudita através de programas que visam a criação de parcerias estratégicas, a expansão econômica e a diversificação.
-            </p>
-        </div>
-        
-        {# TERCEIRA SUB-SEÇÃO: Conquistas? #}
-        <div class="sub-section">
-             <div class="full-width-image-container">
-                <img src="{% static 'images/achievement_icon.png' %}" alt="Conquistas? Imagem principal" class="full-width-image">
-            </div>
-            <div class="header">
-                <h2>Conquistas?</h2>
-            </div>
-            <p>
-                É frequentemente citada como a empresa de capital aberto de maior valor do mundo, com valor de mercado na casa dos trilhões de dólares.
-            </p>
-            <p>
-                Detém o Campo de Safaniya, o maior campo de petróleo offshore do mundo.
-            </p>
-            <p>
-                Desenvolveu e utiliza tecnologias avançadas para exploração e extração, como o simulador de reservatórios (POWERS) em 1997.
-            </p>
-            <p>
-                Realiza grandes investimentos globais, como ser a única proprietária da maior refinaria de petróleo bruto em um único local na América do Norte (Port Arthur, Texas).
-            </p>
-        </div>
+            <span>Perfil</span>
+        </a>
+    </div>
 
+    {# ROLETA (Ao lado dos botões laterais) #}
+    <div class="roulette-section-white">
+        <div class="roulette-container">
+            <a href="{% url 'roleta' %}" class="roulette-button-link">
+                <img src="{% static 'images/roulette_wheel_animated.png' %}" alt="Girar a Roleta" class="roulette-image" id="rouletteImage">
+            </a>
+        </div>
     </div>
 </div>
 
 
+{# BARRA DE NAVEGAÇÃO INFERIOR #}
+<nav class="footer-menu-new">
+    <a href="{% url 'menu' %}" class="footer-item active">
+        <i class="fa-solid fa-house"></i>
+        <span>Menu</span>
+    </a>
+    <a href="{% url 'nivel' %}" class="footer-item">
+        <i class="fa-solid fa-medal"></i>
+        <span>Nível</span>
+    </a>
+    <a href="{% url 'equipa' %}" class="footer-item">
+        <i class="fa-solid fa-users"></i>
+        <span>Equipa</span>
+    </a>
+</nav>
+
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // Lógica do Slider
+        // Lógica do Slider (MANTIDA)
         const images = document.querySelectorAll('.image-slider img');
         let currentImage = 0;
 
@@ -171,19 +126,22 @@
             }, 3000);
         }
 
-        // Lógica do Pop-up de Boas-Vindas
+        // Lógica de Animação para a Roleta (MANTIDA)
+        const rouletteImage = document.getElementById('rouletteImage');
+        if (rouletteImage) {
+            rouletteImage.classList.add('spinning');
+        }
+
+        // Lógica do Pop-up de Boas-Vindas (MANTIDA)
         const popup = document.getElementById('welcomePopup');
         const closeButton = document.getElementById('closePopup');
 
-        // Exibe o pop-up a cada carregamento da página.
         popup.style.display = 'flex'; 
 
-        // Adiciona evento para fechar
         closeButton.addEventListener('click', () => {
             popup.style.display = 'none';
         });
 
-        // Opcional: fechar ao clicar fora do pop-up
         window.addEventListener('click', (event) => {
             if (event.target === popup) {
                 popup.style.display = 'none';
@@ -193,201 +151,249 @@
 </script>
 
 <style>
-    /* Estilos do Pop-up de Boas-Vindas (MANTIDOS) */
+    /* ---------------------- CSS GERAL E POP-UP (MANTIDO) ---------------------- */
+    html {
+        -webkit-text-size-adjust: 100%;
+        -ms-text-size-adjust: 100%;
+        touch-action: manipulation;
+    }
+    body {
+        background-color: #f7f7f7 !important; 
+        overflow-x: hidden; 
+    }
+    .container {
+        padding-bottom: 70px; 
+        padding-left: 0;
+        padding-right: 0;
+        background-color: transparent !important;
+    }
+    
+    .menu-header, .news-marquee-container {
+        display: none !important;
+    }
+
+    /* POP-UP STYLES (Mantido) */
     .popup-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background-color: rgba(0, 0, 0, 0.8);
-        display: none; 
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
-        padding: 20px;
-        box-sizing: border-box;
+        display: none; justify-content: center; align-items: center;
+        z-index: 1000; padding: 20px; box-sizing: border-box;
     }
-
     .popup-content {
-        background-color: #0d1a2f; 
-        color: #fff;
-        width: 90%; 
-        max-width: 400px; 
-        border-radius: 10px;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.9);
+        background-color: #fff; color: #000; width: 90%; max-width: 400px;
+        border-radius: 10px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.9);
+        overflow: hidden; border: 2px solid #1e8449; 
+    }
+    .popup-header { height: 120px; background-color: #1e8449; overflow: hidden; }
+    .popup-image { width: 100%; height: 100%; object-fit: cover; }
+    .popup-body { padding: 15px; text-align: center; }
+    .popup-title { font-size: 1.3rem; color: #1e8449; margin-top: 0; margin-bottom: 10px; }
+    .welcome-text { font-size: 1rem; font-weight: 500; color: #333; margin-bottom: 20px; }
+    .social-links { display: flex; justify-content: space-around; margin-bottom: 20px; }
+    .social-button { text-decoration: none; color: white; padding: 8px 12px; border-radius: 5px; font-size: 0.9rem; font-weight: bold; }
+    .whatsapp-social { background-color: #25D366; }
+    .telegram-social { background-color: #0088cc; }
+    .popup-close-button { background-color: #1e8449; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 5px; width: 100%; }
+
+
+    /* IMAGEM DO CARROSSEL (MANTIDO) */
+    .image-gallery {
+        margin: 0; 
+        padding: 15px 15px 0 15px;
+    }
+    .image-slider {
+        border-radius: 8px;
         overflow: hidden;
-        border: 2px solid #87CEEB; 
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); 
     }
-
-    .popup-header {
+    .image-slider img {
+        width: 100%;
+        height: auto;
+    }
+    
+    /* FAIXA DE NOTIFICAÇÃO (MANTIDO) */
+    .notification-marquee-wrapper {
+        display: flex;
+        align-items: center;
+        background-color: #e5f5e8;
+        color: #1e8449; 
+        padding: 5px 15px;
+        margin: 15px 15px 0 15px; 
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        font-size: 0.8rem;
+        height: 30px;
+    }
+    .notification-icon {
+        font-size: 1rem;
+        margin-right: 10px;
+        flex-shrink: 0;
+    }
+    .marquee-text-container {
+        flex-grow: 1;
+        white-space: nowrap;
+        overflow: hidden;
         position: relative;
-        height: 100px;
-        background-color: #1a1a4d;
+        padding-bottom: 2px;
     }
-
-    .popup-image {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .popup-body {
-        padding: 15px;
-        text-align: center;
-    }
-
-    .popup-title {
-        font-size: 1.1rem;
-        color: #4CAF50; 
-        margin-top: 0;
-        margin-bottom: 10px;
-    }
-
-    .popup-text {
-        font-size: 0.85rem;
-        margin-bottom: 10px;
-        line-height: 1.4;
-        text-align: left;
-    }
-
-    .popup-text.commitment {
-        color: #87CEEB; 
-        font-weight: bold;
-    }
-    .popup-text.disclaimer {
-        font-size: 0.75rem;
-        color: #ccc;
-    }
-
-    .popup-close-button {
-        background-color: #4CAF50;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        text-align: center;
-        text-decoration: none;
+    .marquee-text {
         display: inline-block;
-        font-size: 16px;
-        margin-top: 15px;
-        cursor: pointer;
-        border-radius: 5px;
-        width: 100%;
-        transition: background-color 0.3s;
+        padding-left: 100%;
+        animation: marquee 15s linear infinite;
+        margin: 0;
+        font-weight: 600;
+    }
+    @keyframes marquee {
+        0% { transform: translate(0, 0); }
+        100% { transform: translate(-100%, 0); }
     }
 
-    .popup-close-button:hover {
-        background-color: #45a049;
+
+    /* ---------------------- NOVO LAYOUT LATERAL E ROLETA ---------------------- */
+    .main-layout-content {
+        display: flex;
+        justify-content: flex-start;
+        align-items: flex-start;
+        padding: 15px 15px 0 15px;
+        margin-top: 15px; 
+        position: relative;
     }
 
-    /* Estilos para o Grid de Botões (MENU) - AJUSTADO PARA 4 COLUNAS */
-    .buttons-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr); /* Mantido em 4 colunas */
-        gap: 10px;
-        padding: 10px;
-        margin: 15px 0;
-        background-color: transparent;
+    /* BOTÕES LATERAIS (Área de controle) */
+    .action-buttons-lateral {
+        display: flex;
+        flex-direction: column;
+        gap: 6px; /* REDUZIDO o espaço entre botões (era 8px) */
+        position: absolute; 
+        top: 0;
+        left: 15px;
+        z-index: 10;
+        width: 90px; 
     }
 
-    .grid-item {
+    /* ESTILO GERAL DO BOTÃO LATERAL - ALTURA REDUZIDA */
+    .lateral-item {
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
         text-align: center;
         text-decoration: none;
+        padding: 8px 5px; /* REDUZIDO o padding interno (era 10px) */
+        border-radius: 10px; 
         color: #fff;
-        padding: 5px;
-        border-radius: 8px;
-        transition: background-color 0.3s, transform 0.1s;
-        background-color: rgba(255, 255, 255, 0.05);
-        border: none;
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        transition: transform 0.2s, box-shadow 0.2s;
+        border: 1px solid rgba(255, 255, 255, 0.1); /* Borda mais discreta */
+    }
+    .lateral-item:active {
+        transform: translateY(1px);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
     }
 
-    .grid-item:hover {
-        background-color: rgba(255, 255, 255, 0.1);
-        transform: scale(1.05);
+    /* CORES PERSONALIZADAS PARA CADA BOTÃO */
+    .color-deposito {
+        /* Verde e Azul para Dinheiro/Crescimento */
+        background: linear-gradient(145deg, #1e8449, #176f3c); 
+    }
+    .color-saque {
+        /* Vermelho/Laranja para Ação/Saída */
+        background: linear-gradient(145deg, #cc4e4e, #a93c3c); 
+    }
+    .color-tarefa {
+        /* Azul Claro/Ciano para Produtividade */
+        background: linear-gradient(145deg, #4aa6cc, #3982a9); 
+    }
+    .color-perfil {
+        /* Roxo/Magenta para Identidade/Perfil */
+        background: linear-gradient(145deg, #8e44ad, #7a3894); 
     }
 
-    .icon-container img {
-        width: 35px;
+
+    /* ESTILOS DOS ÍCONES */
+    .icon-container-lateral {
+        width: 35px; /* Ícone um pouco menor (era 40px) */
         height: 35px;
-        margin-bottom: 5px;
-        filter: drop-shadow(0 0 3px rgba(0, 255, 255, 0.8));
-    }
-
-    .grid-item span {
-        font-size: 0.75rem;
-        font-weight: 500;
-        word-break: break-word;
-    }
-
-
-    /* ESTILOS PARA O BLOCO DE TEXTO */
-    .custom-section {
-        text-align: left;
-        margin-top: 20px;
-        padding: 15px;
-        background-color: #1a1a4d;
-        border-radius: 10px;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.5);
-        font-family: 'Arial', sans-serif; 
-        direction: ltr;
-    }
-    
-    .sub-section {
-        margin-bottom: 20px;
-        padding-bottom: 10px;
-        border-bottom: 1px dashed rgba(255, 255, 255, 0.2);
-    }
-    
-    /* ESTILOS DA IMAGEM EM TELA CHEIA (MANTIDOS E AJUSTADOS O NOME DA CLASSE) */
-    .full-width-image-container {
-        margin-bottom: 15px;
-        border-radius: 8px;
-        overflow: hidden;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-    }
-    
-    .full-width-image {
-        width: 100%; 
-        height: 150px; 
-        object-fit: cover; 
-        display: block;
-    }
-    
-    .header {
         display: flex;
+        justify-content: center;
         align-items: center;
-        justify-content: flex-start;
-        margin-bottom: 10px;
-        color: #87CEEB; 
+        background-color: #fff; 
+        border-radius: 50%;
+        margin-bottom: 3px; /* Espaço reduzido (era 5px) */
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.3); /* Sombra mais suave */
+    }
+    .icon-container-lateral i {
+        font-size: 1.3rem; /* Ícone levemente menor (era 1.5rem) */
+        color: #0d1a2f; 
+    }
+    .lateral-item span {
+        font-size: 0.65rem; /* Texto levemente menor (era 0.7rem) */
+        font-weight: 600;
+        color: #fff;
+        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.6);
     }
 
-    .header h2 {
-        font-size: 1.4rem;
-        margin: 0;
+    /* ROLETA (Ao lado dos botões laterais) - MANTIDO */
+    .roulette-section-white {
+        margin-left: 100px; 
+        padding-left: 15px; 
+        flex-grow: 1; 
+        text-align: center; 
+        background-color: transparent; 
+        width: calc(100% - 115px); 
     }
-    
-    .sub-section p {
-        font-size: 0.9rem;
-        color: #ccc;
-        margin-bottom: 8px;
-        line-height: 1.6;
-        text-align: justify;
+    .roulette-container {
+        display: inline-block; 
+        margin-top: 5px; 
+    }
+    .roulette-image {
+        max-width: 100%; 
+        width: 250px; 
+        height: auto;
+        animation: spinning 4s linear infinite; 
+    }
+    @keyframes spinning {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
     }
 
-    .summary {
-        font-weight: bold;
-        color: #4CAF50 !important; 
-        margin-top: 15px !important;
-        text-align: left !important;
+
+    /* RODAPÉ (FIXO E BRANCO) - MANTIDO */
+    .footer-menu-new {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        background-color: #fff; 
+        border-top: 1px solid #ddd;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+        z-index: 500;
+        height: 60px;
+    }
+    .footer-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-decoration: none;
+        color: #999; 
+        padding: 5px 0;
+        flex-grow: 1;
+        transition: color 0.3s;
+    }
+    .footer-item:hover, .footer-item.active {
+        color: #1e8449; 
+    }
+    .footer-item i {
+        font-size: 1.3rem;
+        margin-bottom: 2px;
+    }
+    .footer-item span {
+        font-size: 0.7rem;
+        font-weight: 600;
     }
 
-    /* REMOÇÃO DO RODAPÉ (MANTIDO) */
-    footer, nav.footer-menu { 
-        display: none !important; 
-    }
 </style>
 {% endblock %}

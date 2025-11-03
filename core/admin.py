@@ -17,7 +17,8 @@ class CustomUserAdmin(admin.ModelAdmin):
 
 @admin.register(PlatformSettings)
 class PlatformSettingsAdmin(admin.ModelAdmin):
-    list_display = ('id', 'whatsapp_link', 'history_text', 'deposit_instruction', 'withdrawal_instruction')
+    # Adicionado 'app_download_link' se você atualizou o models.py para exibir no admin
+    list_display = ('id', 'whatsapp_link', 'app_download_link', 'history_text', 'deposit_instruction', 'withdrawal_instruction') 
     search_fields = ('whatsapp_link',)
 
 @admin.register(Level)
@@ -27,7 +28,7 @@ class LevelAdmin(admin.ModelAdmin):
 
 @admin.register(BankDetails)
 class BankDetailsAdmin(admin.ModelAdmin):
-    list_display = ('user', 'bank_name', 'account_holder_name')
+    list_display = ('user', 'bank_name', 'IBAN', 'account_holder_name')
     search_fields = ('user__phone_number', 'bank_name', 'account_holder_name')
 
 @admin.register(PlatformBankDetails)
@@ -68,9 +69,34 @@ class DepositAdmin(admin.ModelAdmin):
 
 @admin.register(Withdrawal)
 class WithdrawalAdmin(admin.ModelAdmin):
-    list_display = ('user', 'amount', 'status', 'created_at')
+    # --- ALTERAÇÃO AQUI: Adicionado 'user_iban' e 'account_details' ---
+    list_display = ('user', 'amount', 'status', 'user_iban', 'account_details', 'created_at')
+    # --- FIM ALTERAÇÃO ---
     search_fields = ('user__phone_number',)
     list_filter = ('status',)
+    
+    # --- NOVO MÉTODO PARA PEGAR IBAN ---
+    def user_iban(self, obj):
+        try:
+            # Tenta obter os detalhes bancários do usuário
+            bank_details = BankDetails.objects.get(user=obj.user)
+            return bank_details.IBAN
+        except BankDetails.DoesNotExist:
+            return "N/A (Adicionar)"
+            
+    user_iban.short_description = 'IBAN do Cliente'
+    # --- FIM NOVO MÉTODO ---
+    
+    # --- NOVO MÉTODO PARA PEGAR DETALHES DA CONTA (Nome/Banco) ---
+    def account_details(self, obj):
+        try:
+            bank_details = BankDetails.objects.get(user=obj.user)
+            return f"{bank_details.account_holder_name} ({bank_details.bank_name})"
+        except BankDetails.DoesNotExist:
+            return "N/A (Adicionar)"
+
+    account_details.short_description = 'Nome/Banco'
+    # --- FIM NOVO MÉTODO ---
 
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):

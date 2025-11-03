@@ -1,476 +1,377 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Perfil{% endblock %}
+{% block title %}Meu Perfil{% endblock %}
 
 {% block content %}
 <div class="page-container">
-    <div class="page-header">
-        <a href="{% url 'menu' %}" class="back-button">
-            <i class="fas fa-arrow-left"></i> 
-            <span>Voltar ao Menu</span>
-        </a>
-        <h1>Meu Perfil</h1>
-    </div>
+	<div class="page-header">
+		<h1>Meu Perfil</h1>
+	</div>
 
-    {% if messages %}
-        <ul class="messages">
-            {% for message in messages %}
-                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-            {% endfor %}
-        </ul>
-    {% endif %}
-    
-    {# NOVO BLOCO: Botões de Acesso Rápido - Vertical e Personalizado #}
-    <div class="vertical-access-buttons">
-        
-        {# Botão: Informações (Substitui a div profile-tabs original para ser um botão vertical) #}
-        <button class="vertical-button tab-button active" onclick="openTab(event, 'info-tab')">
-            <i class="fas fa-user-circle"></i>
-            <span>Informações Pessoais</span>
-            <i class="fas fa-chevron-right arrow-icon"></i>
-        </button>
+	{% if messages %}
+		<div class="messages-container">
+			{% for message in messages %}
+				<p class="message {{ message.tags }}">{{ message }}</p>
+			{% endfor %}
+		</div>
+	{% endif %}
+	
+	<div class="profile-info-card top-info">
+		<h3>📊 Resumo da Conta</h3>
+		<div class="info-grid info-grid-2col">
+			<div class="info-item">
+				<i class="fas fa-phone-alt icon-phone"></i>
+				<span class="label">Telefone:</span>
+				<span class="value">{{ user.phone_number|default:'N/A' }}</span>
+			</div>
+			<div class="info-item">
+				<i class="fas fa-coins icon-balance"></i>
+				<span class="label">Saldo Activo:</span>
+				<span class="value">KZ {{ user.available_balance|default:'0.00' }}</span>
+			</div>
+			<div class="info-item">
+				<i class="fas fa-star icon-level"></i>
+				<span class="label">Nível:</span>
+				<span class="value">{{ user.active_level.name|default:'Básico' }}</span>
+			</div>
+			<div class="info-item">
+				<i class="fas fa-wallet icon-withdraw"></i>
+				<span class="label">Retirada Total:</span>
+				<span class="value">KZ {{ user.total_withdrawn|default:'0.00' }}</span>
+			</div>
+		</div>
+	</div>
 
-        {# Botão: Dados Bancários (Substitui a div profile-tabs original para ser um botão vertical) #}
-        <button class="vertical-button tab-button" onclick="openTab(event, 'bank-tab')">
-            <i class="fas fa-university"></i>
-            <span>Dados Bancários</span>
-            <i class="fas fa-chevron-right arrow-icon"></i>
-        </button>
-        
-        <a href="{% url 'renda' %}" class="vertical-button">
-            <i class="fas fa-money-bill-wave"></i>
-            <span>Renda</span>
-            <i class="fas fa-chevron-right arrow-icon"></i>
-        </a>
-        <a href="{% url 'nivel' %}" class="vertical-button">
-            <i class="fas fa-chart-line"></i>
-            <span>Nível</span>
-            <i class="fas fa-chevron-right arrow-icon"></i>
-        </a>
-        <a href="{% url 'equipa' %}" class="vertical-button">
-            <i class="fas fa-users"></i>
-            <span>Equipa</span>
-            <i class="fas fa-chevron-right arrow-icon"></i>
-        </a>
-        <a href="{% url 'roleta' %}" class="vertical-button">
-            <i class="fas fa-dice-one"></i>
-            <span>Roleta da Sorte</span>
-            <i class="fas fa-chevron-right arrow-icon"></i>
-        </a>
-    </div>
-    {# FIM DO NOVO BLOCO #}
+	<div class="action-buttons-container">
+		<button type="button" class="action-button primary-action" onclick="showBankForm()">
+			<i class="fas fa-university"></i>
+			<span>Dados Bancários (Editar)</span>
+		</button>
+		
+		<a href="{% url 'download_app' %}" class="action-button secondary-action">
+			<i class="fas fa-download"></i>
+			<span>Download do Aplicativo</span>
+		</a>
+		
+		<a href="{% url 'logout' %}" class="action-button danger-action">
+			<i class="fas fa-sign-out-alt"></i>
+			<span>Sair da Conta</span>
+		</a>
+	</div>
 
-    <div class="profile-container">
-        
-        {# Conteúdo da Aba/Botão Informações - AGORA APARECE ABAIXO DO BOTÃO #}
-        <div id="info-tab" class="tab-content active">
-            <div class="info-item">
-                <span class="label">Número de Telefone:</span>
-                <span class="value">{{ user.phone_number }}</span>
-            </div>
-            <div class="info-item">
-                <span class="label">Saldo Activo:</span>
-                <span class="value">$ {{ user.available_balance }}</span>
-            </div>
-            <div class="info-item">
-                <span class="label">Retirada Total:</span>
-                <span class="value">$ {{ user.total_withdrawn }}</span>
-            </div>
-            <div class="info-item">
-                <span class="label">Nível Ativo:</span>
-                <span class="value">Nível {{ user.active_level.name }}</span>
-            </div>
-        </div>
+	<div id="bank-form-container" class="profile-card form-card" style="display:none;">
+		<h3>✏️ Editar Dados Bancários</h3>
+		<form method="post" class="form-style">
+			{% csrf_token %}
+			<div class="form-group">
+				<label for="{{ form.account_holder_name.id_for_label }}">Nome Completo:</label>
+				{{ form.account_holder_name }}
+				{% for error in form.account_holder_name.errors %} <p class="errorlist">{{ error }}</p> {% endfor %}
+			</div>
+			<div class="form-group">
+				<label for="{{ form.bank_name.id_for_label }}">Nome do Banco:</label>
+				{{ form.bank_name }}
+				{% for error in form.bank_name.errors %} <p class="errorlist">{{ error }}</p> {% endfor %}
+			</div>
+			<div class="form-group">
+				<label for="{{ form.IBAN.id_for_label }}">IBAN:</label>
+				{{ form.IBAN }}
+				{% for error in form.IBAN.errors %} <p class="errorlist">{{ error }}</p> {% endfor %}
+			</div>
+			<button type="submit" name="update_bank" class="submit-button primary-button">
+				<i class="fas fa-save"></i> Salvar Dados Bancários
+			</button>
+			<button type="button" class="submit-button secondary-button" onclick="hideBankForm()">
+				<i class="fas fa-times"></i> Cancelar
+			</button>
+		</form>
+	</div>
 
-        {# Conteúdo da Aba/Botão Dados Bancários - AGORA APARECE ABAIXO DO BOTÃO #}
-        <div id="bank-tab" class="tab-content">
-            <h3>Dados para Saque</h3>
-            <form method="post" class="form-style">
-                {% csrf_token %}
-                <div class="form-group">
-                    <label for="{{ form.account_holder_name.id_for_label }}">Nome Completo:</label>
-                    {{ form.account_holder_name }}
-                    {% if form.account_holder_name.errors %}
-                        <ul class="errorlist">
-                            {% for error in form.account_holder_name.errors %}
-                                <li>{{ error }}</li>
-                            {% endfor %}
-                        </ul>
-                    {% endif %}
-                </div>
-                <div class="form-group">
-                    <label for="{{ form.bank_name.id_for_label }}">Nome do Banco:</label>
-                    {{ form.bank_name }}
-                    {% if form.bank_name.errors %}
-                        <ul class="errorlist">
-                            {% for error in form.bank_name.errors %}
-                                <li>{{ error }}</li>
-                            {% endfor %}
-                        </ul>
-                    {% endif %}
-                </div>
-                <div class="form-group">
-                    <label for="{{ form.IBAN.id_for_label }}">IBAN:</label>
-                    {{ form.IBAN }}
-                    {% if form.IBAN.errors %}
-                        <ul class="errorlist">
-                            {% for error in form.IBAN.errors %}
-                                <li>{{ error }}</li>
-                            {% endfor %}
-                        </ul>
-                    {% endif %}
-                </div>
-                <button type="submit" name="update_bank" class="submit-button">Salvar Dados Bancários</button>
-            </form>
-            
-            <h3 style="margin-top: 30px;">Alterar Senha</h3>
-            <form method="post" class="form-style" style="margin-top: 20px;">
-                {% csrf_token %}
-                <div class="form-group">
-                    <label for="{{ password_form.old_password.id_for_label }}">Senha Antiga:</label>
-                    {{ password_form.old_password }}
-                </div>
-                <div class="form-group">
-                    <label for="{{ password_form.new_password1.id_for_label }}">Nova Senha:</label>
-                    {{ password_form.new_password1 }}
-                </div>
-                <div class="form-group">
-                    <label for="{{ password_form.new_password2.id_for_label }}">Confirme a Nova Senha:</label>
-                    {{ password_form.new_password2 }}
-                </div>
-                <button type="submit" name="change_password" class="submit-button change-password-button">Alterar Senha</button>
-            </form>
-        </div>
-        
-        <div class="info-item logout-link-container">
-            <a href="{% url 'logout' %}" class="profile-action-button logout-button">Sair</a>
-        </div>
-    </div>
 </div>
 
 <style>
-    /* Inclua esta linha no seu `base.html` ou em um CSS global se possível */
-    @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
+	/* ------------------------------------------------------------------- */
+	/* ESTILOS DE TEMA: BRANCO COM BRILHO, ESCURO E PROFISSIONAL */
+	/* ------------------------------------------------------------------- */
+	@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
 
-    /* GARANTE QUE O RODAPÉ É REMOVIDO */
-    footer, nav.footer-menu { 
-        display: none !important; 
-    }
+	/* TEMA CLARO SOLICITADO */
+	body {
+		background-color: #f8f9fa; /* Fundo Branco/Claro */
+		color: #343a40; /* Texto Escuro */
+		font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+	}
+	
+	.page-container {
+		padding: 10px 15px; /* Reduz o padding superior */
+		max-width: 450px;
+		margin: 0 auto;
+	}
+	
+	/* Remoção total de elementos de navegação antiga */
+	footer, nav.footer-menu { 
+		display: none !important; 
+	}
+	.page-header {
+		/* ENCOSTAR O TOPO: Reduzido padding e margin */
+		text-align: center;
+		padding: 10px 0 5px; 
+		margin-bottom: 10px;
+	}
+	.page-header h1 {
+		color: #007bff; /* Azul primário */
+		font-size: 2.2em;
+		font-weight: 700;
+		text-shadow: none; /* Removido brilho no tema claro */
+	}
 
-    .page-container {
-        padding: 10px;
-        max-width: 450px; /* Limita largura para melhor visualização móvel */
-        margin: 0 auto;
-    }
-    
-    /* ESTILOS DO CABEÇALHO E BOTÃO VOLTAR */
-    .page-header {
-        position: relative;
-        display: flex;
-        align-items: center;
-        /* Altera o justify-content para empurrar o título para o lado */
-        justify-content: flex-start; 
-        background-color: #00004d;
-        padding: 10px;
-        border-radius: 10px;
-        margin-bottom: 20px;
-        min-height: 50px;
-    }
-    .page-header h1 {
-        color: #4CAF50;
-        margin: 0;
-        /* Adiciona margem à esquerda para não sobrepor o botão de voltar */
-        margin-left: 100px; 
-        font-family: 'Arial', sans-serif;
-        font-size: 1.5rem;
-    }
-    .back-button {
-        position: absolute;
-        left: 10px;
-        background-color: #1a3250;
-        color: #fff;
-        text-decoration: none;
-        padding: 8px 10px;
-        border-radius: 5px;
-        font-size: 0.9rem;
-        transition: background-color 0.3s;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        z-index: 10; /* Garante que fique acima do título se houver sobreposição */
-    }
-    .back-button:hover {
-        background-color: #2a5585;
-    }
-    .back-button i {
-        font-size: 1.1rem;
-    }
+	/* Mensagens de sucesso/erro */
+	.messages-container {
+		margin-bottom: 15px;
+	}
+	.message {
+		padding: 10px;
+		border-radius: 5px;
+		font-weight: bold;
+		text-align: center;
+		margin-bottom: 5px;
+		color: #fff;
+	}
+	.success { background-color: #28a745; }
+	.error { background-color: #dc3545; }
+	.warning-message {
+		color: #856404;
+		padding: 10px;
+		background-color: #fff3cd; /* Fundo amarelo claro */
+		border: 1px solid #ffeeba;
+		border-radius: 5px;
+		text-align: center;
+	}
 
-    /* ESTILOS DOS NOVOS BOTÕES VERTICAIS */
-    .vertical-access-buttons {
-        display: flex;
-        flex-direction: column; /* Organiza em coluna */
-        gap: 8px; /* Espaçamento entre os botões */
-        margin-bottom: 20px;
-    }
-    .vertical-button {
-        display: flex;
-        align-items: center;
-        background-color: #0d1a2f; /* Fundo do botão */
-        border: 1px solid #1a3250;
-        padding: 15px;
-        border-radius: 8px;
-        text-decoration: none;
-        color: #fff;
-        font-weight: bold;
-        font-size: 1rem;
-        transition: background-color 0.3s, box-shadow 0.3s;
-        width: 100%; /* Ocupa a largura total */
-        box-sizing: border-box;
-        text-align: left;
-        cursor: pointer;
-    }
-    .vertical-button:hover {
-        background-color: #1a3250;
-        box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
-    }
-    .vertical-button i {
-        font-size: 1.3rem;
-        margin-right: 15px;
-        color: #87CEEB; /* Cor dos ícones */
-    }
-    .vertical-button span {
-        flex-grow: 1; /* Faz o span ocupar o máximo de espaço */
-    }
-    .arrow-icon {
-        color: #4CAF50 !important;
-        font-size: 0.9rem !important;
-        margin-right: 0 !important;
-    }
-    .vertical-button.tab-button {
-        /* Garante que os botões de Informações e Dados Bancários pareçam iguais */
-        border-bottom: 1px solid #1a3250; 
-    }
-    /* Estilo para botão de aba ativo */
-    .vertical-button.active {
-        background-color: #1a3250;
-        box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
-        color: #4CAF50; /* Destaca o texto do botão ativo */
-    }
-    .vertical-button.active i {
-        color: #4CAF50;
-    }
+	/* CARDS GERAIS (Fundo Branco/Claro) */
+	.profile-info-card, .bank-details-display, .form-card {
+		background-color: #ffffff; /* Fundo do card branco */
+		padding: 20px;
+		border-radius: 10px;
+		margin-bottom: 15px;
+		box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Sombra suave */
+	}
+	.profile-info-card h3, .bank-details-display h3, .form-card h3 {
+		color: #007bff; /* Azul Destaque */
+		border-bottom: 2px solid #e9ecef;
+		padding-bottom: 10px;
+		margin-bottom: 15px;
+		font-size: 1.3rem;
+	}
 
-    /* ESTILOS DO CONTEÚDO OCULTÁVEL (tab-content) */
-    /* Remove a div profile-tabs anterior, pois os botões agora estão na vertical-access-buttons */
-    .profile-tabs {
-        display: none; 
-    }
-    .profile-container {
-        /* Ajusta o padding para compensar a remoção do profile-tabs */
-        background-color: #0d1a2f; 
-        padding: 20px;
-        border-radius: 10px;
-        margin: 20px auto;
-        max-width: 400px;
-        box-shadow: 0 8px 16px rgba(0,0,0,0.7); 
-        border: 1px solid #1a3250;
-    }
-    .tab-content {
-        display: none;
-        padding-top: 10px;
-        border-top: 1px solid #1a3250; /* Linha divisória para separar do botão */
-        margin-top: 15px;
-    }
-    .tab-content.active {
-        display: block;
-    }
-    /* Adicione um estilo para os títulos dentro das abas */
-    .tab-content h3 {
-        color: #4CAF50;
-        border-bottom: 1px dashed #1a3250;
-        padding-bottom: 5px;
-        margin-bottom: 15px;
-        font-size: 1.2rem;
-    }
-    
-    /* Outros estilos de formulário e info-item mantidos */
-    .info-item {
-        display: flex;
-        justify-content: space-between;
-        padding: 12px 0;
-        border-bottom: 1px solid #1a3250;
-    }
-    .info-item:last-of-type {
-        border-bottom: none;
-    }
-    .label {
-        font-weight: bold;
-        color: #87CEEB;
-        font-family: 'Arial', sans-serif;
-    }
-    .value {
-        color: #fff;
-        font-family: 'Arial', sans-serif;
-    }
-    /* ... (restante dos estilos de form, submit-button, logout mantidos) ... */
-    
-    .form-style .form-group {
-        margin-bottom: 15px;
-    }
-    .form-style label {
-        display: block;
-        margin-bottom: 8px;
-        color: #87CEEB;
-        font-family: 'Arial', sans-serif;
-    }
-    .form-style input {
-        width: 100%;
-        padding: 12px;
-        border: 1px solid #1a3250;
-        background-color: #00004d;
-        color: #fff;
-        border-radius: 5px;
-        box-sizing: border-box;
-        font-size: 1rem;
-        transition: border-color 0.3s;
-    }
-    .form-style input:focus {
-        border-color: #4CAF50;
-        outline: none;
-    }
-    .submit-button {
-        display: block;
-        width: 100%;
-        padding: 12px;
-        text-align: center;
-        margin-top: 15px;
-        text-decoration: none;
-        color: #fff;
-        border-radius: 5px;
-        transition: background-color 0.3s, transform 0.2s;
-        cursor: pointer;
-        border: none;
-        font-size: 1rem;
-        font-weight: bold;
-        background-color: #4CAF50;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-    }
-    .submit-button:hover {
-        background-color: #388e3c;
-        transform: translateY(-2px);
-    }
-    .change-password-button {
-        background-color: #007bff;
-    }
-    .change-password-button:hover {
-        background-color: #0056b3;
-    }
-    .logout-link-container {
-        margin-top: 20px;
-        padding-top: 20px;
-        border-top: 1px solid #1a3250;
-        text-align: center;
-    }
-    .logout-button {
-        display: inline-block; /* Garante que o link funcione como um botão de bloco */
-        background-color: #dc3545;
-        border: none;
-        box-shadow: 0 0 10px rgba(220, 53, 69, 0.5); 
-        transition: box-shadow 0.4s ease, transform 0.3s ease;
-        padding: 12px 20px;
-        font-weight: bold;
-        text-decoration: none;
-        color: #fff;
-        border-radius: 5px;
-        width: 100%;
-        box-sizing: border-box;
-    }
-    .logout-button:hover {
-        background-color: #c82333;
-        box-shadow: 0 0 25px rgba(220, 53, 69, 1); 
-        transform: translateY(-3px); 
-    }
-    .errorlist {
-        color: #ff4444;
-        list-style: none;
-        padding: 0;
-        margin-top: 5px;
-        font-size: 0.9rem;
-    }
+	/* INFORMAÇÕES PRINCIPAIS (GRID) */
+	.info-grid-2col {
+		display: grid;
+		/* AQUI: Define 2 colunas para todas as resoluções para economizar espaço */
+		grid-template-columns: 1fr 1fr; 
+		gap: 10px;
+	}
+
+	.info-item {
+		background-color: #f1f1f1; /* Fundo cinza claro para os itens */
+		padding: 10px;
+		border-radius: 5px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		border: 1px solid #e9ecef;
+		text-align: center;
+	}
+	.info-item .label {
+		color: #6c757d; /* Cinza para o rótulo */
+		font-size: 0.85rem;
+		font-weight: 500;
+		margin-top: 5px;
+	}
+	.info-item .value {
+		color: #343a40;
+		font-size: 1.0rem;
+		font-weight: bold;
+	}
+	.info-item i {
+		font-size: 1.3rem;
+		margin-bottom: 5px;
+	}
+	/* Cores dos Ícones */
+	.icon-phone { color: #fd7e14; } 
+	.icon-balance { color: #ffc107; } 
+	.icon-level { color: #28a745; } 
+	.icon-withdraw { color: #dc3545; } 
+
+	/* DADOS BANCÁRIOS */
+	.bank-info-grid {
+		display: grid;
+		grid-template-columns: 1fr;
+	}
+	.bank-details-display .info-item {
+		flex-direction: row;
+		justify-content: space-between;
+		align-items: center;
+		background: none;
+		padding: 8px 0;
+		border: none;
+		/* Mantém a linha divisória entre Titular e Banco */
+		border-bottom: 1px dashed #ced4da; 
+	}
+	/* Garante que o último item (Banco) não tenha linha divisória abaixo */
+	.bank-details-display .info-item:last-child {
+		border-bottom: none; 
+	}
+	.bank-details-display .label {
+		font-size: 0.95rem;
+		color: #343a40;
+	}
+	.bank-details-display .value {
+		font-size: 0.95rem;
+		font-weight: 600;
+	}
+	/* Esta classe .highlighted no CSS não terá efeito prático na exibição do IBAN, mas é mantida */
+	.info-item.highlighted .value {
+		color: #28a745; /* Destaque Verde para o IBAN */
+		cursor: pointer;
+	}
+
+	/* BOTÕES DE AÇÃO NA PARTE INFERIOR */
+	.action-buttons-container {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		margin-top: 20px;
+	}
+	.action-button {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 12px;
+		border-radius: 8px;
+		font-weight: bold;
+		font-size: 1.0rem;
+		text-decoration: none;
+		border: none;
+		cursor: pointer;
+		transition: transform 0.2s, box-shadow 0.2s;
+		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+	}
+	.action-button i {
+		font-size: 1.2rem;
+		margin-right: 10px;
+	}
+	.action-button:hover {
+		transform: translateY(-2px);
+	}
+	
+	.primary-action {
+		background-color: #007bff; /* Azul Primário */
+		color: #fff;
+	}
+	.primary-action:hover {
+		background-color: #0056b3;
+	}
+	.secondary-action {
+		background-color: #6c757d; /* Cinza Secundário (Download) */
+		color: #fff;
+	}
+	.secondary-action:hover {
+		background-color: #5a6268;
+	}
+	.danger-action {
+		background-color: #dc3545; /* Vermelho (Sair) */
+		color: #fff;
+	}
+	.danger-action:hover {
+		background-color: #c82333;
+	}
+
+	/* ESTILOS DO FORMULÁRIO */
+	.form-style label {
+		color: #007bff;
+		font-weight: 600;
+		margin-bottom: 5px;
+	}
+	.form-style input {
+		width: 100%;
+		padding: 10px;
+		border: 1px solid #ced4da;
+		background-color: #fff;
+		color: #343a40;
+		border-radius: 5px;
+		box-sizing: border-box;
+	}
+	.form-style input:focus {
+		border-color: #007bff;
+		box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+		outline: none;
+	}
+	.submit-button {
+		display: block;
+		width: 100%;
+		padding: 10px;
+		text-align: center;
+		margin-top: 10px;
+		font-weight: bold;
+		border-radius: 5px;
+		border: none;
+	}
+	.secondary-button {
+		background-color: #6c757d;
+		color: #fff;
+	}
+	.secondary-button:hover {
+		background-color: #5a6268;
+	}
+	.errorlist {
+		color: #dc3545;
+		font-size: 0.8rem;
+		margin-top: 5px;
+	}
 </style>
 
 <script>
-    function openTab(evt, tabName) {
-        var i, tabContent, tabButtons;
-        
-        // 1. Oculta todos os conteúdos de aba E remove a linha divisória (profile-container border)
-        tabContent = document.getElementsByClassName("tab-content");
-        for (i = 0; i < tabContent.length; i++) {
-            tabContent[i].style.display = "none";
-            document.querySelector('.profile-container').style.borderTop = 'none'; // Esconde a linha
-        }
-        
-        // 2. Remove o estilo 'active' de todos os botões verticais
-        tabButtons = document.getElementsByClassName("tab-button");
-        for (i = 0; i < tabButtons.length; i++) {
-            tabButtons[i].classList.remove("active");
-        }
+	const bankFormContainer = document.getElementById('bank-form-container');
+	const bankDetailsDisplay = document.querySelector('.bank-details-display');
 
-        // 3. Exibe o conteúdo da aba clicada
-        const targetTab = document.getElementById(tabName);
-        if (targetTab.style.display === "block") {
-            // Se já estiver aberto, esconde e remove o active do botão (toggle)
-            targetTab.style.display = "none";
-            evt.currentTarget.classList.remove("active");
-            document.querySelector('.profile-container').style.borderTop = 'none';
-            localStorage.removeItem('activeTab');
-        } else {
-            // Caso contrário, mostra o conteúdo e ativa o botão
-            targetTab.style.display = "block";
-            evt.currentTarget.classList.add("active");
-            document.querySelector('.profile-container').style.borderTop = '1px solid #1a3250'; // Mostra a linha
-            localStorage.setItem('activeTab', tabName);
-        }
-    }
+	// Função que garante que o formulário é exibido se houver erros ou se o usuário clicou no botão
+	function showBankForm() {
+		bankFormContainer.style.display = 'block';
+		window.scrollTo(0, bankFormContainer.offsetTop - 20); // Rola para o formulário
+	}
 
-    document.addEventListener("DOMContentLoaded", function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        let activeTab = urlParams.get('tab') || localStorage.getItem('activeTab');
+	function hideBankForm() {
+		bankFormContainer.style.display = 'none';
+	}
 
-        // Se houver erros de formulário, força a abertura da aba de dados bancários
-        const hasFormErrors = document.querySelector('.tab-content .errorlist');
-        if (hasFormErrors) {
-            activeTab = 'bank-tab';
-        }
-        
-        // Se houver uma aba ativa para carregar
-        if (activeTab) {
-             // 1. Garante que todos os conteúdos estejam ocultos
-            const allTabContents = document.getElementsByClassName('tab-content');
-            for (let i = 0; i < allTabContents.length; i++) {
-                allTabContents[i].style.display = 'none';
-            }
-            // 2. Garante que todos os botões estejam inativos
-            const allTabButtons = document.getElementsByClassName("tab-button");
-            for (let i = 0; i < allTabButtons.length; i++) {
-                allTabButtons[i].classList.remove('active');
-            }
-
-            // 3. Ativa o botão e mostra a aba
-            const tabToOpen = document.getElementById(activeTab);
-            const activeTabButton = document.querySelector(`.tab-button[onclick*="'${activeTab}'"]`);
-            
-            if (tabToOpen && activeTabButton) {
-                tabToOpen.style.display = 'block';
-                activeTabButton.classList.add('active');
-                document.querySelector('.profile-container').style.borderTop = '1px solid #1a3250';
-            } else {
-                // Se não houver aba para abrir, garante que a linha divisória não apareça
-                document.querySelector('.profile-container').style.borderTop = 'none';
-            }
-        }
-    });
+	document.addEventListener("DOMContentLoaded", function() {
+		// 1. Verifica se o formulário deve ser exibido por causa de erros ou query param
+		const hasFormErrors = document.querySelector('#bank-form-container .errorlist');
+		if (hasFormErrors || window.location.search.includes('show_bank_form=true')) {
+			showBankForm();
+		}
+		
+		// 2. A funcionalidade de Copiar IBAN não funcionará, pois o elemento foi removido da exibição.
+		const copyableIBAN = document.querySelector('.copyable');
+		if (copyableIBAN) {
+			copyableIBAN.addEventListener('click', function() {
+				const iban = this.getAttribute('data-iban');
+				navigator.clipboard.writeText(iban)
+					.then(() => {
+						this.innerHTML = 'Copiado! <i class="fas fa-check"></i>';
+						setTimeout(() => {
+							// Este bloco nunca será alcançado pelo JS, pois o elemento foi removido no HTML
+							this.innerHTML = `${iban} <i class="far fa-copy"></i>`;
+						}, 2000);
+					})
+					.catch(err => {
+						console.error('Falha ao copiar:', err);
+						alert('Falha ao copiar o IBAN. Tente novamente.');
+					});
+			});
+		}
+	});
 </script>
 {% endblock %}

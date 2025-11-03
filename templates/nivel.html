@@ -4,31 +4,49 @@
 {% block title %}Níveis de Investimento - Plataforma{% endblock %}
 
 {% block content %}
-<div class="container my-5">
-    <div class="page-header">
-        <h1>✨ MATÉRIA PRIMA ✨</h1>
+<div class="container my-5 custom-container">
+    <div class="page-header-custom">
+        <h1>🚀 NÍVEIS DE INVESTIMENTO <i class="fas fa-chart-bar"></i></h1>
     </div>
     
+    {# A classe 'col-6 mb-4' garante que 2 cards caibam por linha em ecrãs grandes e pequenos (a partir de 'xs') #}
     <div class="level-list row justify-content-center">
         {% for level in levels %}
-        <div class="col-6 mb-4">
+        {# O campo 'level.id' é usado para dar um ícone único a cada nível #}
+        <div class="col-6 mb-4 level-card-col">
             <div class="level-item {% if level.id in user_levels %}active-border{% endif %}">
                 
+                {# Ícone Personalizado baseando-se no ID (imita categorias de investimento) #}
                 <div class="level-icon">
-                    <i class="fas fa-trophy" style="color: {% cycle '#FFD700' '#C0C0C0' '#CD7F32' '#1E90FF' '#4CAF50' '#FF6347' as icon_colors %}"></i>
+                    {# Ícones 100% diferentes e personalizados. O ID do nível é usado para atribuir um ícone e cor fixos. #}
+                    {% if level.id == 1 %}
+                        <i class="fas fa-seedling" style="color: #6c5ce7;"></i> 
+                    {% elif level.id == 2 %}
+                        <i class="fas fa-cubes" style="color: #00b894;"></i> 
+                    {% elif level.id == 3 %}
+                        <i class="fas fa-rocket" style="color: #e17055;"></i>
+                    {% elif level.id == 4 %}
+                        <i class="fas fa-gem" style="color: #fdcb6e;"></i>
+                    {% elif level.id == 5 %}
+                        <i class="fas fa-crown" style="color: #ff7675;"></i>
+                    {% else %}
+                        <i class="fas fa-layer-group" style="color: #dfe6e9;"></i>
+                    {% endif %}
                 </div>
                 
                 <div class="level-info">
                     <h3 class="level-title">{{ level.name }}</h3>
                     
                     <div class="level-details">
-                        <p><i class="fas fa-wallet detail-icon"></i> Depósito: <strong class="value-text deposit-value">$ {{ level.deposit_value }}</strong></p>
-                        <p><i class="fas fa-money-bill-wave detail-icon"></i> Ganho Diário: <strong class="value-text daily-gain">$ {{ level.daily_gain }}</strong></p>
-                        <p><i class="fas fa-chart-line detail-icon"></i> Ganho Mensal: <strong class="value-text monthly-gain">$ {{ level.monthly_gain }}</strong></p>
-                        <p><i class="fas fa-calendar-alt detail-icon"></i> Ciclo: <strong class="value-text cycle-days">{{ level.cycle_days }} dias</strong></p>
+                        {# Ícones 100% diferentes para os detalhes #}
+                        <p><i class="fas fa-hand-holding-usd detail-icon" style="color: #0984e3;"></i> Depósito: <strong class="value-text deposit-value">KZ {{ level.deposit_value }}</strong></p>
+                        <p><i class="fas fa-funnel-dollar detail-icon" style="color: #00b894;"></i> Ganho Diário: <strong class="value-text daily-gain">KZ {{ level.daily_gain }}</strong></p>
+                        <p><i class="fas fa-piggy-bank detail-icon" style="color: #e17055;"></i> Ganho Mensal: <strong class="value-text monthly-gain">KZ {{ level.monthly_gain }}</strong></p>
+                        <p><i class="fas fa-stopwatch detail-icon" style="color: #a29bfe;"></i> Ciclo: <strong class="value-text cycle-days">{{ level.cycle_days }} dias</strong></p>
                     </div>
                 </div>
                 
+                {# Lógica de Interação com Django MANTIDA #}
                 {% if level.id in user_levels %}
                     <span class="active-level pulse-effect">Nível Ativo</span>
                 {% else %}
@@ -45,138 +63,163 @@
 </div>
 
 <style>
-    /* Cores e Fundo */
+    /* 🎨 Cores e Estilos Globais */
     :root {
-        --dark-blue: #0A1931; 
-        --light-blue: #185E8B; 
-        --green-accent: #4CAF50; 
-        --active-color: #00BCD4; 
-        --text-light: #F0F0F0;
-        --text-muted: #B0B0B0;
+        --primary-blue: #007bff; /* Azul padrão */
+        --success-green: #28a745; 
+        --warning-orange: #ffc107;
+        --light-gray: #f8f9fa;
+        --dark-text: #343a40;
+        --border-color: #dee2e6;
     }
 
     body {
-        background-color: #050E1A; 
+        background-color: var(--light-gray); 
     }
 
-    /* Cabeçalho */
-    .page-header {
+    /* 📌 Cabeçalho Personalizado */
+    .page-header-custom {
         text-align: center;
-        padding: 30px 0;
-        background: linear-gradient(135deg, var(--dark-blue) 0%, var(--light-blue) 100%);
-        border-radius: 15px;
-        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.4);
-        margin-bottom: 40px;
+        padding: 20px 15px;
+        background-color: #ffffff;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+        border-bottom: 4px solid var(--primary-blue);
     }
-    .page-header h1 {
-        color: var(--green-accent);
+    .page-header-custom h1 {
+        color: var(--dark-text);
         font-weight: 700;
-        letter-spacing: 2px;
-        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
+        font-size: 1.8rem;
     }
 
-    /* OTIMIZAÇÃO PARA TELAS PEQUENAS (MOBILE) */
+    /* 🧱 Cards de Nível - Ajuste de Tamanho e Layout */
+    .custom-container {
+        max-width: 900px; /* Limita a largura para melhor visualização de 2 cards por linha */
+        padding: 0 10px;
+    }
+    
     .level-item {
-        background: var(--dark-blue);
-        padding: 15px; /* Reduz o padding para economizar espaço */
-        border-radius: 12px;
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+        background: #ffffff; /* Fundo Branco, conforme solicitado */
+        padding: 18px; /* Padding interno equilibrado */
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15); /* Sombra mais suave */
         text-align: center;
-        transition: transform 0.4s ease, box-shadow 0.4s ease, border 0.4s ease;
+        transition: transform 0.3s ease, box-shadow 0.3s ease, border 0.3s ease;
         height: 100%;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        border: 2px solid transparent; 
+        border: 2px solid var(--border-color); /* Borda padrão leve */
     }
 
     .level-item:hover {
-        transform: translateY(-5px) scale(1.02); /* Ajustado o hover para ser mais sutil */
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.8), 0 0 10px var(--light-blue);
+        transform: translateY(-4px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
     }
 
     .active-border {
-        border-color: var(--active-color) !important;
-    }
-
-    /* Ícone */
-    .level-icon {
-        font-size: 2.5rem; /* Reduzido o tamanho do ícone */
-        margin-bottom: 10px;
-        height: 40px; 
+        border-color: var(--success-green) !important; /* Borda verde para ativo */
+        box-shadow: 0 0 10px rgba(40, 167, 69, 0.5);
     }
     
-    /* Título do Nível */
+    /* 💎 Ícone Principal do Nível (Personalizado) */
+    .level-icon {
+        font-size: 3rem; /* Tamanho maior para destaque */
+        margin-bottom: 15px;
+        line-height: 1;
+    }
+    
+    /* 🏷️ Título do Nível */
     .level-title {
-        color: var(--active-color);
-        font-weight: 600;
-        margin-bottom: 10px;
-        font-size: 1.4rem; /* Reduzido o tamanho do título */
+        color: var(--primary-blue);
+        font-weight: 700;
+        margin-bottom: 15px;
+        font-size: 1.2rem; /* Tamanho do título para caber no card */
         text-transform: uppercase;
     }
 
-    /* Detalhes */
+    /* 📊 Detalhes do Nível */
     .level-details {
         text-align: left;
-        padding: 0 5px; /* Reduzido o padding */
-        font-size: 0.85rem; /* Reduzido o tamanho do texto dos detalhes */
+        padding: 0 5px;
+        font-size: 0.9rem;
+        color: var(--dark-text);
+        border-top: 1px dashed var(--border-color);
+        padding-top: 10px;
     }
     .level-details p {
-        margin: 5px 0;
+        margin: 7px 0;
+        display: flex;
+        align-items: center;
     }
-
     .detail-icon {
-        color: var(--green-accent);
-        margin-right: 5px;
-        width: 15px;
+        margin-right: 8px;
+        width: 18px;
+        text-align: center;
+        font-size: 1.1rem;
+    }
+    .value-text {
+        font-weight: bold;
+        color: var(--dark-text);
+        margin-left: auto;
     }
 
-    /* Botões e Status */
+    /* 🛒 Botões e Status */
     .buy-button, .active-level {
         width: 100%;
-        padding: 8px; /* Reduzido o padding do botão */
-        margin-top: 15px;
+        padding: 10px;
+        margin-top: 20px;
         border-radius: 6px;
-        font-size: 0.9rem; /* Reduzido o tamanho da fonte do botão */
+        font-size: 1rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        border: none;
     }
 
     .buy-button {
-        background-color: var(--green-accent);
-        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+        background-color: var(--primary-blue);
         color: white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
 
     .buy-button.hover-effect:hover {
-        background-color: #388e3c;
+        background-color: #0056b3;
     }
 
     .active-level {
-        background-color: var(--active-color);
-        color: var(--dark-blue);
+        background-color: var(--success-green);
+        color: white;
         animation: pulse 1.5s infinite; 
     }
     
-    /* Keyframes para o efeito de pulsação */
+    /* Animação */
     @keyframes pulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.02); } /* Pulsação mais suave no mobile */
-        100% { transform: scale(1); }
+        0% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.03); opacity: 0.9; }
+        100% { transform: scale(1); opacity: 1; }
     }
 
-    /* A classe 'col-6' do Bootstrap garante 50% de largura em todas as telas (xs, sm, md, lg) */
-    /* Caso você não esteja usando Bootstrap, adicione o CSS abaixo para garantir 50% de largura */
-    /*
-    @media (max-width: 767px) {
-        .level-list > div {
-            flex: 0 0 50%;
-            max-width: 50%;
+    /* 📱 Responsividade - Garante 2 cards por linha no mobile se houver espaço */
+    /* col-6 do Bootstrap já resolve a maioria, mas ajustamos o container */
+    @media (max-width: 576px) {
+        .page-header-custom h1 {
+            font-size: 1.5rem;
         }
-    }
-    */
-
-    .container {
-        max-width: 1200px;
-        padding: 0 5px; /* Reduz o padding lateral do container no mobile */
+        .level-card-col {
+            /* Força 1 card por linha em ecrãs muito pequenos para melhor legibilidade */
+             flex: 0 0 100%;
+             max-width: 100%;
+        }
+        .level-item {
+            padding: 15px;
+        }
+        .level-icon {
+            font-size: 2.5rem;
+        }
+        .level-details {
+            font-size: 0.85rem;
+        }
     }
 </style>
 {% endblock %}

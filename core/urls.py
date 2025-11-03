@@ -14,10 +14,17 @@ urlpatterns = [
     path('cadastro/', views.cadastro, name='cadastro'),
     path('login/', views.user_login, name='login'),
     path('logout/', views.user_logout, name='logout'),
+    
+    # --- Rota Adicionada para o Download do Aplicativo ---
+    path('download/app/', views.download_app, name='download_app'), 
+    
     path('deposito/', views.deposito, name='deposito'),
     path('saque/', views.saque, name='saque'),
     path('tarefa/', views.tarefa, name='tarefa'),
-    path('process_task/', views.process_task, name='process_task'),
+    
+    # ROTAS REMOVIDAS: 'process_task' e 'check_and_generate_gain' não são mais necessárias
+    # com a nova lógica de ganho de 24h implementada na função views.tarefa.
+
     path('nivel/', views.nivel, name='nivel'),
     path('equipa/', views.equipa, name='equipa'),
     path('roleta/', views.roleta, name='roleta'),

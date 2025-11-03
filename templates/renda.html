@@ -17,15 +17,15 @@
         </div>
         <div class="summary-item">
             <p><strong>Depósito Activo:</strong></p>
-            <span>$ {{ approved_deposit_total|default:"0.00" }}</span>
+            <span>KZ {{ approved_deposit_total|default:"0.00" }}</span>
         </div>
         <div class="summary-item highlight">
             <p><strong>Saldo Activo:</strong></p>
-            <span>$ {{ user.available_balance|default:"0.00" }}</span>
+            <span>KZ {{ user.available_balance|default:"0.00" }}</span>
         </div>
         <div class="summary-item">
             <p><strong>Ganho de Subsídio:</strong></p>
-            <span>$ {{ user.subsidy_balance|default:"0.00" }}</span>
+            <span>KZ {{ user.subsidy_balance|default:"0.00" }}</span>
         </div>
     </div>
     
@@ -33,15 +33,15 @@
         <h3>Detalhes da Renda</h3>
         <div class="detail-item">
             <p>Renda de Hoje:</p>
-            <span>$ {{ daily_income|default:"0.00" }}</span>
+            <span>KZ {{ daily_income|default:"0.00" }}</span>
         </div>
         <div class="detail-item">
             <p>Renda Total:</p>
-            <span>$ {{ total_income|default:"0.00" }}</span>
+            <span>KZ {{ total_income|default:"0.00" }}</span>
         </div>
         <div class="detail-item">
             <p>Retirada Total:</p>
-            <span>$ {{ total_withdrawals|default:"0.00" }}</span>
+            <span>KZ {{ total_withdrawals|default:"0.00" }}</span>
         </div>
     </div>
 

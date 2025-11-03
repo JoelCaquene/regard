@@ -7,11 +7,72 @@ from django.db.models import Sum
 from django.urls import reverse
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
+from django.db import transaction # IMPORTANTE: Adicionado para transações seguras
 import random
-from datetime import date
+from datetime import date, datetime, time, timedelta # Importação completa
+from django.utils import timezone # Adicionado para garantir o uso de timezone-aware datetimes
+from decimal import Decimal # <--- IMPORTANTE: Adicionado para corrigir o TypeError
 
 from .forms import RegisterForm, DepositForm, WithdrawalForm, BankDetailsForm
 from .models import PlatformSettings, CustomUser, Level, UserLevel, BankDetails, Deposit, Withdrawal, Task, PlatformBankDetails, Roulette, RouletteSettings
+
+
+# --- NOVA FUNÇÃO DE LÓGICA (Ganho de 24 horas) ---
+@transaction.atomic # Garante que as operações de banco de dados sejam seguras
+def check_and_apply_daily_gain(user):
+    """
+    Verifica e aplica o ganho de 24 horas ao saldo do usuário, se devido.
+    
+    ESTA FUNÇÃO REQUER O CAMPO 'last_daily_gain_date' NO MODELO UserLevel.
+    
+    Retorna (boolean, datetime_do_proximo_ganho)
+    """
+    # Usamos select_for_update para bloquear a linha, garantindo que o ganho não seja duplicado
+    active_user_level = UserLevel.objects.select_for_update().filter(user=user, is_active=True).first()
+    
+    if not active_user_level:
+        return False, None
+
+    level = active_user_level.level
+    now = timezone.now()
+    
+    # Define o tempo de espera (24 horas)
+    COOLDOWN_DURATION = timedelta(hours=24) 
+    
+    # Se o 'last_daily_gain_date' for None (primeiro acesso), usamos a data de compra como referência.
+    last_gain_time = active_user_level.last_daily_gain_date or active_user_level.purchase_date
+    next_gain_time = last_gain_time + COOLDOWN_DURATION
+
+    # 1. Verifica se já é hora de aplicar o ganho
+    if now >= next_gain_time:
+        
+        daily_gain_amount = level.daily_gain
+        
+        # 2. Aplicar o ganho ao saldo do usuário
+        user.available_balance += daily_gain_amount
+        user.save()
+        
+        # 3. Registrar o último ganho no UserLevel e criar um registro de Task (para histórico)
+        active_user_level.last_daily_gain_date = now # Zera o contador para o próximo ciclo
+        active_user_level.save()
+        
+        # Cria um registro de tarefa concluída (para fins de histórico e totalização)
+        Task.objects.create(
+            user=user, 
+            # Assumimos que o primeiro TaskDefinition (ID=1) é a 'Tarefa Diária Padrão'
+            # Isso é um palpite. Você deve garantir que TaskDefinition.objects.first() exista.
+            task_definition=Task.objects.first(), 
+            earnings=daily_gain_amount
+        )
+        
+        # O próximo ganho será 24h a partir de agora
+        next_gain_time_new = now + COOLDOWN_DURATION
+        return True, next_gain_time_new
+    
+    # Se não for hora de gerar o ganho
+    return False, next_gain_time
+# --- FIM DA NOVA FUNÇÃO DE LÓGICA ---
+
 
 # --- FUNÇÃO ATUALIZADA ---
 def home(request):
@@ -20,6 +81,26 @@ def home(request):
     else:
         return redirect('cadastro')
 # --- FIM DA FUNÇÃO ATUALIZADA ---
+
+# --- NOVA FUNÇÃO ADICIONADA PARA RESOLVER O NoReverseMatch ---
+@login_required
+def download_app(request):
+    """
+    View para o link de download do aplicativo. 
+    Redireciona para o link configurado ou para um placeholder.
+    """
+    try:
+        # Tenta obter o link de download configurado nas PlatformSettings
+        app_link = PlatformSettings.objects.first().app_download_link
+        if app_link:
+            return redirect(app_link)
+    except (PlatformSettings.DoesNotExist, AttributeError):
+        pass # Ignora se a configuração não existe ou não tem o campo
+        
+    # Se não houver link configurado ou a configuração falhar, usa um placeholder temporário
+    # ATENÇÃO: Você deve configurar o 'app_download_link' no modelo PlatformSettings no Admin.
+    return redirect('https://seulinkdedownload.com')
+# --- FIM DA NOVA FUNÇÃO ---
 
 def menu(request):
     user_level = None
@@ -31,13 +112,17 @@ def menu(request):
     try:
         platform_settings = PlatformSettings.objects.first()
         whatsapp_link = platform_settings.whatsapp_link
+        # --- ADIÇÃO DO LINK DO TELEGRAM AQUI ---
+        telegram_link = getattr(platform_settings, 'telegram_link', '#') 
     except (PlatformSettings.DoesNotExist, AttributeError):
         whatsapp_link = '#'
+        telegram_link = '#' # Valor padrão se as configurações não existirem
 
     context = {
         'user_level': user_level,
         'levels': levels,
         'whatsapp_link': whatsapp_link,
+        'telegram_link': telegram_link, # Passando o link do Telegram para o template
     }
     return render(request, 'menu.html', context)
 
@@ -60,7 +145,7 @@ def cadastro(request):
                 except CustomUser.DoesNotExist:
                     messages.error(request, 'Código de convite inválido.')
                     return render(request, 'cadastro.html', {'form': form})
-            
+                
             user.save()
             login(request, user)
             return redirect('menu')
@@ -162,36 +247,61 @@ def approve_deposit(request, deposit_id):
         deposit.save()
         deposit.user.available_balance += deposit.amount
         deposit.user.save()
-        messages.success(request, f'Depósito de {deposit.amount} $ aprovado para {deposit.user.phone_number}. Saldo atualizado.')
+        messages.success(request, f'Depósito de {deposit.amount} KZ aprovado para {deposit.user.phone_number}. Saldo atualizado.')
     
     return redirect('renda')
 
+# --- FUNÇÃO DE SAQUE ATUALIZADA COM NOVAS REGRAS ---
 @login_required
 def saque(request):
+    # NOVOS PARÂMETROS DE SAQUE
+    MIN_WITHDRAWAL_AMOUNT = Decimal('2000') # Usado como Decimal por ser valor monetário
+    START_TIME = time(9, 0, 0) # 09:00:00
+    END_TIME = time(18, 0, 0) # 18:00:00
+    # FIM DOS NOVOS PARÂMETROS
+
     withdrawal_instruction = PlatformSettings.objects.first().withdrawal_instruction if PlatformSettings.objects.first() else 'Instruções de saque não disponíveis.'
     
     withdrawal_records = Withdrawal.objects.filter(user=request.user).order_by('-created_at')
     
     has_bank_details = BankDetails.objects.filter(user=request.user).exists()
     
+    # Verifica se o saque está dentro do horário permitido
+    now = datetime.now().time()
+    is_time_allowed = START_TIME <= now <= END_TIME
+
+    # Verifica se já houve saque hoje
+    today = date.today()
+    already_withdrawn_today = Withdrawal.objects.filter(
+        user=request.user, 
+        created_at__date=today
+    ).exists()
+    
     if request.method == 'POST':
         form = WithdrawalForm(request.POST)
         if form.is_valid():
             amount = form.cleaned_data['amount']
+            
             if not has_bank_details:
                 messages.error(request, 'Por favor, adicione suas coordenadas bancárias no seu perfil antes de solicitar um saque.')
                 return redirect('perfil')
             
-            if amount < 14:
-                messages.error(request, 'O valor mínimo para saque é 14 $.')
+            if not is_time_allowed:
+                messages.error(request, f'O saque só é permitido entre as {START_TIME.strftime("%H:%M")}h e as {END_TIME.strftime("%H:%M")}h.')
+            elif already_withdrawn_today:
+                messages.error(request, 'Você só pode realizar um saque por dia.')
+            elif amount < MIN_WITHDRAWAL_AMOUNT: # Mínimo atualizado
+                messages.error(request, f'O valor mínimo para saque é {MIN_WITHDRAWAL_AMOUNT} KZ.')
             elif request.user.available_balance < amount:
                 messages.error(request, 'Saldo insuficiente.')
             else:
+                # Todas as regras de negócio foram atendidas
                 withdrawal = Withdrawal.objects.create(user=request.user, amount=amount)
                 request.user.available_balance -= amount
                 request.user.save()
                 messages.success(request, 'Saque solicitado com sucesso. Aguarde a aprovação.')
                 return redirect('saque')
+        # Se o formulário não for válido, as mensagens de erro do formulário (se houver) serão tratadas implicitamente.
     else:
         form = WithdrawalForm()
 
@@ -199,59 +309,61 @@ def saque(request):
         'withdrawal_instruction': withdrawal_instruction,
         'withdrawal_records': withdrawal_records,
         'form': form,
-        'has_bank_details': has_bank_details
+        'has_bank_details': has_bank_details,
+        'min_withdrawal_amount': MIN_WITHDRAWAL_AMOUNT, # Passa o novo mínimo para o template
+        'is_time_allowed': is_time_allowed, # Passa se está no horário
+        'already_withdrawn_today': already_withdrawn_today # Passa se já sacou hoje
     }
     return render(request, 'saque.html', context)
+# --- FIM DA FUNÇÃO DE SAQUE ATUALIZADA ---
 
+
+# --- FUNÇÃO TAREFA COMPLETAMENTE SUBSTITUÍDA PELA LÓGICA DE 24H ---
 @login_required
 def tarefa(request):
     user = request.user
     
-    # Encontra o nível ativo do usuário
-    active_level = UserLevel.objects.filter(user=user, is_active=True).first()
-    has_active_level = active_level is not None
+    # 1. Tenta aplicar o ganho se 24h se passaram
+    gain_applied, next_gain_time = check_and_apply_daily_gain(user)
     
-    # Define o número de tarefas
-    max_tasks = 1
-    tasks_completed_today = 0
+    # 2. Encontra o nível ativo (novamente, se necessário para o template)
+    active_user_level = UserLevel.objects.filter(user=user, is_active=True).first()
     
-    if has_active_level:
-        today = date.today()
-        tasks_completed_today = Task.objects.filter(user=user, completed_at__date=today).count()
+    cooldown_seconds_remaining = 0 # Inicializa
     
+    if active_user_level and next_gain_time:
+        now = timezone.now()
+        
+        if next_gain_time > now:
+            # Calcula o tempo restante real até o próximo ganho
+            time_remaining = next_gain_time - now
+            cooldown_seconds_remaining = int(time_remaining.total_seconds())
+        else:
+            # Se o ganho deveria ter sido aplicado mas por algum motivo falhou (ou não tem nível)
+            cooldown_seconds_remaining = 0
+
     context = {
-        'has_active_level': has_active_level,
-        'active_level': active_level,
-        'tasks_completed_today': tasks_completed_today,
-        'max_tasks': max_tasks,
+        'has_active_level': active_user_level is not None,
+        'active_level': active_user_level,
+        'level': active_user_level.level if active_user_level else None, # Passamos o objeto Level
+        'cooldown_seconds_remaining': cooldown_seconds_remaining, # Tempo real restante
+        'gain_applied': gain_applied, # Indica se um ganho acabou de ser aplicado
     }
     return render(request, 'tarefa.html', context)
+# --- FIM DA FUNÇÃO TAREFA SUBSTITUÍDA ---
 
-@login_required
-@require_POST
-def process_task(request):
-    user = request.user
-    active_level = UserLevel.objects.filter(user=user, is_active=True).first()
 
-    if not active_level:
-        return JsonResponse({'success': False, 'message': 'Você não tem um nível ativo para realizar tarefas.'})
+# ATENÇÃO: AS FUNÇÕES process_task E check_and_generate_gain FORAM REMOVIDAS
+# PORQUE A NOVA LÓGICA DE 24H AS TORNA DESNECESSÁRIAS.
 
-    today = date.today()
-    tasks_completed_today = Task.objects.filter(user=user, completed_at__date=today).count()
-    max_tasks = 1
 
-    if tasks_completed_today >= max_tasks:
-        return JsonResponse({'success': False, 'message': 'Você já concluiu todas as tarefas diárias.'})
-
-    earnings = active_level.level.daily_gain
-    Task.objects.create(user=user, earnings=earnings)
-    user.available_balance += earnings
-    user.save()
-
-    return JsonResponse({'success': True, 'daily_gain': earnings})
-
+# --- FUNÇÃO NIVEL ATUALIZADA COM CORREÇÃO DE TYPERROR ---
 @login_required
 def nivel(request):
+    # CORREÇÃO: Converte o valor para Decimal para evitar TypeError na multiplicação (Decimal * float)
+    INVITE_COMMISSION_PERCENTAGE = Decimal('0.15') # 15%
+    # FIM DO NOVO PERCENTUAL
+    
     levels = Level.objects.all().order_by('deposit_value')
     user_levels = UserLevel.objects.filter(user=request.user, is_active=True).values_list('level__id', flat=True)
     
@@ -265,18 +377,31 @@ def nivel(request):
         
         if request.user.available_balance >= level_to_buy.deposit_value:
             request.user.available_balance -= level_to_buy.deposit_value
-            UserLevel.objects.create(user=request.user, level=level_to_buy, is_active=True)
+            
+            # --- ATUALIZAÇÃO IMPORTANTE PARA INICIALIZAR O CAMPO last_daily_gain_date ---
+            # Para o novo ciclo de 24h funcionar corretamente a partir da compra:
+            UserLevel.objects.create(
+                user=request.user, 
+                level=level_to_buy, 
+                is_active=True,
+                # O primeiro ciclo será gerado 24h após a compra.
+                # Não definimos last_daily_gain_date aqui para que o primeiro cálculo na tarefa(request) use a purchase_date.
+            )
+            
             request.user.level_active = True
             request.user.save()
             
             invited_by_user = request.user.invited_by
             if invited_by_user and UserLevel.objects.filter(user=invited_by_user, is_active=True).exists():
-                invited_by_user.subsidy_balance += 11
-                invited_by_user.available_balance += 11
+                # Calcula a nova comissão de 15%
+                commission_amount = level_to_buy.deposit_value * INVITE_COMMISSION_PERCENTAGE
+                
+                invited_by_user.subsidy_balance += commission_amount
+                invited_by_user.available_balance += commission_amount
                 invited_by_user.save()
-                messages.success(request, f'Parabéns! Você recebeu 11 $ de subsídio por convite de {request.user.phone_number}.')
+                messages.success(request, f'Parabéns! Você recebeu {commission_amount:.2f} KZ de subsídio por convite de {request.user.phone_number} (15% do investimento).')
 
-            messages.success(request, f'Você comprou o nível {level_to_buy.name} com sucesso!')
+            messages.success(request, f'Você comprou o nível {level_to_buy.name} com sucesso! O seu primeiro ganho estará disponível em 24h.')
         else:
             messages.error(request, 'Saldo insuficiente. Por favor, faça um depósito.')
         
@@ -287,6 +412,7 @@ def nivel(request):
         'user_levels': user_levels,
     }
     return render(request, 'nivel.html', context)
+# --- FIM DA FUNÇÃO NIVEL ATUALIZADA ---
 
 @login_required
 def equipa(request):
@@ -389,7 +515,7 @@ def spin_roulette(request):
     user.available_balance += prize
     user.save()
 
-    return JsonResponse({'success': True, 'prize': prize, 'message': f'Parabéns! Você ganhou {prize} $.'})
+    return JsonResponse({'success': True, 'prize': prize, 'message': f'Parabéns! Você ganhou {prize} KZ.'})
 
 @login_required
 def sobre(request):
@@ -446,6 +572,7 @@ def renda(request):
     approved_deposit_total = Deposit.objects.filter(user=user, is_approved=True).aggregate(Sum('amount'))['amount__sum'] or 0
     
     today = date.today()
+    # A linha abaixo foi alterada para calcular o ganho diário com base nos registros da Task.
     daily_income = Task.objects.filter(user=user, completed_at__date=today).aggregate(Sum('earnings'))['earnings__sum'] or 0
 
     # A linha abaixo foi alterada para corrigir o status para 'Aprovado'

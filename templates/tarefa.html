@@ -1,335 +1,549 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Tarefas{% endblock %}
+{% block title %}Tarefas - Cronômetro de Ganho Diário{% endblock %}
 
 {% block content %}
 <div class="page-container">
     <div class="page-header">
-        <h1>Tarefas Diárias</h1>
+        <h1>Cronômetro de Ganho Diário 💰</h1>
     </div>
 
-    {% if not has_active_level %}
-    <div class="sub-section">
-             <div class="full-width-image-container">
-                <img src="{% static 'images/tarefa2_icon.png' %}" alt="inatruções Imagem principal" class="full-width-image">
-            </div>
-            <div class="header">
-                <h2>Instruções</h2>
-            </div>
-
-        <div class="info-box-danger">
-            <p>✨✨✨✨ A SUA MÁQUINA DE REFINARIA DE PETRÓLEO, ESTA SEM PRODUTO ✨✨✨✨
-                
-            <p>✨✨✨✨COMPRE MATÉRIA BRUTA, PARA REFINAR E COMEÇAR A GANHAR, VISITA A PAGINA PERFIL, ESCOLHA PRODUTO, VÁ NO DEPOSITO REALIZA DEPOSITO, E VOLTE NO PERFIL, VÁ NO NIVEL, E COMPRA PRODUTO, A SUA REFINARIA ESTARÁ ACTIVA✨✨✨✨</p>
-        </div>
-    {% else %}
+    <div class="task-machine-container clock-style">
         
-        <div class="refinery-image-top-container">
-            <img src="{% static 'images/refinaria_banner.jpg' %}" alt="Refinaria de Petróleo" class="refinery-banner-image">
-        </div>
-
-        <div class="task-machine-container refinery-style">
+        <div class="circular-display-container">
+            <div class="circular-progress" id="circular-progress">
+                <div class="progress-value" id="progress-value">
+                    <i class="fas fa-clock timer-icon"></i> 
+                    <div id="countdown-display" class="countdown-clock">
+                        <span id="hours-display">00</span>:<span id="minutes-display">00</span>:<span id="seconds-display">00</span>
+                    </div>
+                </div>
+            </div>
             
-            <div class="refinery-tower">
-                <div class="tower-pipe pipe-left"></div>
-                <div class="tower-pipe pipe-right"></div>
-                
-                <div class="machine-screen refinery-screen">
-                    <p id="task-message">Clique no botão abaixo para trabalhar e gerar seu ganho diário!</p>
-                </div>
-            </div>
-
-            <div class="machine-body refinery-body">
-                <div class="machine-light-container refinery-lights">
-                    <div class="machine-light red-light" id="light-red"></div>
-                    <div class="machine-light yellow-light" id="light-yellow"></div>
-                    <div class="machine-light green-light" id="light-green"></div>
-                </div>
-                
-                <button id="work-button" class="work-button refinery-valve-button">REFINAR</button>
-            </div>
+            {# Mensagem que aparecerá abaixo do relógio #}
+            <p id="task-message">Contagem regressiva automática de 24h.</p>
         </div>
 
-        {# Mensagens do Django podem ser exibidas aqui, se houver #}
-        {% if messages %}
-            <ul class="messages">
-                {% for message in messages %}
-                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-                {% endfor %}
-            </ul>
-        {% endif %}
+        <div class="machine-controls">
+            <div class="status-lights">
+                <div class="light-indicator red-light" id="light-red"></div>
+                <div class="light-indicator yellow-light" id="light-yellow"></div>
+                <div class="light-indicator green-light" id="light-green"></div>
+            </div>
+            
+            {# O botão é desabilitado/habilitado pelo JS e pela lógica do Django #}
+            <button id="work-button" class="action-button primary-action-button">INICIAR CICLO</button>
+        </div>
+    </div>
 
-        <div class="tasks-info">
+    {# --- Bloco de Informações do Nível e Mensagem para NÃO-INVESTIDORES --- #}
+    <div class="tasks-info">
+        {% if has_active_level %}
             <p><strong>Nível Ativo:</strong> {{ active_level.level.name|default:"Nenhum" }}</p>
-            <p><strong>Tarefas diárias restantes:</strong> <span id="tasks-remaining">0</span></p>
-        </div>
+            <p><strong>Ganho Diário:</strong> <span class="gain-amount">KZ {{ active_level.level.daily_gain|default:"0.00" }}</span></p>
+            <p><strong>Status do Ciclo:</strong> <span id="cycle-status">...</span></p>
+        {% else %}
+            {# Nova mensagem para quem não tem nível ativo - REMOVENDO A INSTRUÇÃO ORIGINAL #}
+            <p style="color: var(--warning-color);">⚠️ &nbsp; **MÁQUINA EM STANDBY.** &nbsp; ⚠️</p>
+            <p style="font-size: 0.9rem;">Compre um **Nível/Produto** para liberar e iniciar o ciclo de ganhos diários. Visite o menu **NÍVEL**.</p>
+        {% endif %}
+    </div>
 
-        <script>
-            document.addEventListener("DOMContentLoaded", function() {
-                const workButton = document.getElementById('work-button');
-                const taskMessage = document.getElementById('task-message');
-                const tasksRemainingSpan = document.getElementById('tasks-remaining');
-                
-                // Elementos de luzes
-                const lightRed = document.getElementById('light-red');
-                const lightYellow = document.getElementById('light-yellow');
-                const lightGreen = document.getElementById('light-green');
-
-                // Estes valores devem ser passados do backend.
-                // Variáveis do Django para JS (LÓGICA MANTIDA)
-                let tasksCompletedToday = {{ tasks_completed_today|default:0 }}; 
-                let maxTasks = {{ max_tasks|default:1 }};
-
-                function updateLightStatus(isWorking = false) {
-                    lightRed.classList.remove('active', 'blinking');
-                    lightYellow.classList.remove('active', 'blinking');
-                    lightGreen.classList.remove('active', 'blinking');
-
-                    const tasksRemaining = maxTasks - tasksCompletedToday;
-
-                    if (isWorking) {
-                        // Estado de processamento
-                        lightYellow.classList.add('blinking');
-                    } else if (tasksRemaining > 0) {
-                        // Pronto para trabalhar (Luz Vermelha Piscando)
-                        lightRed.classList.add('blinking');
-                        workButton.textContent = "REFINAR";
-                    } else {
-                        // Tarefas concluídas (Luz Verde Acesa)
-                        lightGreen.classList.add('active');
-                        workButton.textContent = "CONCLUÍDO";
-                    }
-                }
-
-                function checkTasksStatus() {
-                    const tasksRemaining = maxTasks - tasksCompletedToday;
-
-                    if (tasksRemaining <= 0) {
-                        if (workButton) {
-                            workButton.disabled = true;
-                            taskMessage.textContent = "Você já completou suas tarefas diárias.";
-                        }
-                    } else {
-                         if (workButton) {
-                            workButton.disabled = false;
-                            taskMessage.textContent = "Clique no botão abaixo para trabalhar e gerar seu ganho diário!";
-                        }
-                    }
-                    
-                    if (tasksRemainingSpan) {
-                        tasksRemainingSpan.textContent = Math.max(0, tasksRemaining);
-                    }
-                    
-                    updateLightStatus();
-                }
-        
-                if (workButton) {
-                    workButton.addEventListener('click', function() {
-                        if (tasksCompletedToday < maxTasks) {
-                            workButton.disabled = true;
-                            taskMessage.textContent = "Processando o Petróleo... aguarde.";
-                            updateLightStatus(true); // Ativa o estado de processamento
-
-                            // Fazer uma requisição AJAX para o backend aqui (LÓGICA MANTIDA)
-                            fetch("{% url 'process_task' %}", {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'X-CSRFToken': '{{ csrf_token }}' // Necessário para POST requests no Django
-                                }
-                            })
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.success) {
-                                    tasksCompletedToday++;
-                                    taskMessage.textContent = `Tarefa concluída! Ganho diário: $ ${data.daily_gain}.`;
-                                    // Atualizar o saldo do usuário na página se necessário
-                                } else {
-                                    taskMessage.textContent = data.message || "Ocorreu um erro ao processar a tarefa.";
-                                }
-                                checkTasksStatus();
-                                workButton.disabled = (maxTasks - tasksCompletedToday <= 0); // Reativa se houver tarefas restantes
-                            })
-                            .catch(error => {
-                                console.error('Erro:', error);
-                                taskMessage.textContent = "Erro na comunicação com o servidor.";
-                                checkTasksStatus();
-                            });
-                        }
-                    });
-                }
-                checkTasksStatus();
-            });
-        </script>
+    {# Mensagens do Django (mantido no final) #}
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
     {% endif %}
+
+    <script>
+        // Variável de tempo inicial do Django (se o nível estiver ativo)
+        const initialTimeRemaining = {{ cooldown_seconds_remaining|default:0 }}; 
+        
+        // Se o usuário tem nível ativo, a máquina está "trabalhando" no ciclo; se não, está em "idle"
+        const hasActiveLevel = {{ has_active_level|lower }}; 
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const workButton = document.getElementById('work-button');
+            const taskMessage = document.getElementById('task-message');
+            const cycleStatus = document.getElementById('cycle-status');
+            const hoursDisplay = document.getElementById('hours-display');
+            const minutesDisplay = document.getElementById('minutes-display');
+            const secondsDisplay = document.getElementById('seconds-display');
+            const circularProgress = document.getElementById('circular-progress');
+            
+            const lightRed = document.getElementById('light-red');
+            const lightYellow = document.getElementById('light-yellow');
+            const lightGreen = document.getElementById('light-green');
+
+            const MAX_TIME = 86400; // 24 horas em segundos
+            let timeRemaining = initialTimeRemaining; 
+            let countdownInterval;
+
+            // Define o estado inicial de "trabalho" baseado no tempo restante (se houver nível ativo)
+            let isWorking = hasActiveLevel && timeRemaining > 0;
+            let isCompleted = hasActiveLevel && timeRemaining <= 0;
+
+            // --- FUNÇÃO PARA PEGAR O CSRF TOKEN DO COOKIE (MANTIDA) ---
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        let cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+
+            // --- FUNÇÕES DE CONTROLE DE UI (ADAPTADAS) ---
+
+            function updateLightStatus(status) {
+                // status: 'idle', 'running', 'completed', 'no_level'
+                lightRed.classList.remove('active', 'blinking');
+                lightYellow.classList.remove('active', 'blinking');
+                lightGreen.classList.remove('active', 'blinking');
+                
+                let buttonText = "INICIAR CICLO";
+                let statusText = "INATIVO (Aguardando Início)";
+                let progressColor = '#FF3D00'; // Vermelho/Laranja Inicial
+                
+                if (status === 'running') {
+                    lightYellow.classList.add('blinking');
+                    workButton.disabled = true;
+                    buttonText = "CICLO EM ANDAMENTO...";
+                    statusText = "ATIVO (Gerando Ganhos)";
+                    progressColor = '#4CAF50'; // Verde
+                } else if (status === 'completed') {
+                    lightGreen.classList.add('active');
+                    workButton.disabled = false;
+                    buttonText = "RECEBER GANHO (Ciclo Completo)";
+                    statusText = "CONCLUÍDO (Pronto para o Ganho)";
+                    progressColor = '#FFC107'; // Amarelo para destacar a ação
+                } else if (status === 'no_level') {
+                    // Novo estado para usuários sem nível ativo
+                    lightRed.classList.add('active');
+                    workButton.disabled = true;
+                    buttonText = "NÍVEL INATIVO";
+                    statusText = "STANDBY (Nível Requerido)";
+                    progressColor = '#D32F2F'; // Vermelho
+                } else { // 'idle' 
+                    lightRed.classList.add('blinking');
+                    // Se tiver nível, pode iniciar. Se não tiver, desabilita.
+                    workButton.disabled = hasActiveLevel ? false : true; 
+                    if (!hasActiveLevel) {
+                        buttonText = "NÍVEL INATIVO";
+                        statusText = "STANDBY (Nível Requerido)";
+                        progressColor = '#D32F2F';
+                    }
+                }
+
+                workButton.textContent = buttonText;
+                
+                // Atualiza o status de texto apenas se o usuário tiver nível
+                if (hasActiveLevel) {
+                    cycleStatus.textContent = statusText;
+                }
+                
+                // Se não tem nível ativo, o progresso é 0% e vermelho, e o contador é 00:00:00
+                if (!hasActiveLevel) {
+                    circularProgress.style.setProperty('--progress', '0%');
+                    hoursDisplay.textContent = '00';
+                    minutesDisplay.textContent = '00';
+                    secondsDisplay.textContent = '00';
+                    taskMessage.textContent = "Ative um Nível para iniciar a contagem de 24h.";
+                } else {
+                    circularProgress.style.background = `conic-gradient(${progressColor} var(--progress), #1e2a40 var(--progress))`;
+                }
+            }
+            
+            function formatTime(totalSeconds) {
+                const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+                const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+                const seconds = String(totalSeconds % 60).padStart(2, '0');
+                return { hours, minutes, seconds };
+            }
+
+            function updateCountdownDisplay() {
+                if (timeRemaining > 0) {
+                    const { hours, minutes, seconds } = formatTime(timeRemaining);
+                    hoursDisplay.textContent = hours;
+                    minutesDisplay.textContent = minutes;
+                    minutesDisplay.textContent = minutes; // Duplicado no código original, mantido por precaução
+                    secondsDisplay.textContent = seconds;
+                    taskMessage.textContent = "Próxima geração de lucros em...";
+                    
+                    const progressPercent = ((MAX_TIME - timeRemaining) / MAX_TIME) * 100;
+                    circularProgress.style.setProperty('--progress', `${progressPercent}%`);
+                    
+                } else {
+                    hoursDisplay.textContent = '00';
+                    minutesDisplay.textContent = '00';
+                    secondsDisplay.textContent = '00';
+                    taskMessage.textContent = "CICLO COMPLETO! Clique para receber seu ganho!";
+                    
+                    circularProgress.style.setProperty('--progress', '100%'); 
+                    
+                    clearInterval(countdownInterval); 
+                    updateLightStatus('completed');
+                }
+            }
+
+            function startCountdown() {
+                if (!hasActiveLevel) return; // Não inicia se não tem nível ativo
+
+                if (countdownInterval) {
+                    clearInterval(countdownInterval);
+                }
+                
+                if (timeRemaining > 0) {
+                    isWorking = true;
+                    updateLightStatus('running');
+                    updateCountdownDisplay(); 
+                    
+                    countdownInterval = setInterval(() => {
+                        if (timeRemaining > 0) {
+                            timeRemaining--;
+                            updateCountdownDisplay();
+                        } else {
+                            // Zerou
+                            isWorking = false; // Parou de trabalhar
+                            updateCountdownDisplay(); 
+                        }
+                    }, 1000);
+                } else {
+                    isWorking = false; 
+                    updateCountdownDisplay(); 
+                }
+            }
+            
+            // --- FUNÇÃO AJAX PRINCIPAL (AGORA APONTA PARA A VIEW tarefa) ---
+
+            function checkAndGenerateGain(isInitialStart = false) {
+                if (!hasActiveLevel) {
+                    taskMessage.textContent = "ERRO: Nível não ativo. Compre um Nível para prosseguir.";
+                    updateLightStatus('no_level');
+                    return;
+                }
+                
+                const csrftoken = getCookie('csrftoken'); 
+                
+                updateLightStatus('running'); 
+                workButton.disabled = true;
+                taskMessage.textContent = "Comunicando com o sistema... Aguarde.";
+                
+                // *** ALTERAÇÃO CRÍTICA: Aponta para a própria URL 'tarefa' (que é a view que processa o POST) ***
+                fetch("{% url 'tarefa' %}", { 
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken 
+                    },
+                    body: JSON.stringify({ action: 'process_gain', is_initial_start: isInitialStart }) 
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const dailyGain = data.daily_gain || "{{ active_level.level.daily_gain|default:'0.00' }}"; 
+                        
+                        taskMessage.textContent = `GANHO RECEBIDO! ${data.message || 'Ciclo reiniciado.'} Ganho: KZ ${dailyGain}.`;
+                        
+                        // O backend agora retorna o novo tempo restante ou o tempo total (MAX_TIME)
+                        timeRemaining = data.new_time_remaining || MAX_TIME; 
+                        isWorking = true;
+                        
+                        startCountdown(); 
+                        
+                    } else {
+                        taskMessage.textContent = data.message || "Falha ao processar a tarefa.";
+                        
+                        // Atualiza o tempo restante com o valor do backend, se fornecido
+                        if (data.time_remaining !== undefined) {
+                            timeRemaining = data.time_remaining;
+                            if (timeRemaining > 0) {
+                                startCountdown(); 
+                            } else {
+                                updateLightStatus('completed');
+                            }
+                        } else {
+                            // Se falhou e não retornou tempo, assume o estado inicial (idle ou running)
+                            if (isWorking) {
+                                updateLightStatus('running'); 
+                            } else {
+                                updateLightStatus('idle'); 
+                            }
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro de Rede:', error);
+                    taskMessage.textContent = "Erro de conexão. Verifique sua rede. Tente novamente.";
+                    updateLightStatus('no_level'); 
+                });
+            }
+            
+            // --- INICIALIZAÇÃO E EVENT LISTENERS (ADAPTADOS) ---
+
+            if (workButton) {
+                workButton.addEventListener('click', function() {
+                    if (hasActiveLevel) {
+                        // Clica para INICIAR o ciclo (tempo <= 0) ou para receber o ganho e REINICIAR o ciclo (tempo <= 0)
+                        // A única forma de o botão estar habilitado é se o tempo for <= 0 ou se for o primeiro clique.
+                        checkAndGenerateGain(isInitialStart = timeRemaining <= 0); 
+                    } else {
+                        // Se não tem nível, desativa e mostra a mensagem correta
+                        updateLightStatus('no_level');
+                    }
+                });
+            }
+            
+            // Lógica de inicialização unificada
+            if (hasActiveLevel) {
+                if (initialTimeRemaining > 0) {
+                    startCountdown(); 
+                } else if (initialTimeRemaining <= 0) {
+                    updateLightStatus('completed');
+                    taskMessage.textContent = "CICLO COMPLETO! Clique para receber seu ganho!";
+                } else {
+                    // Estado inicial (Tempo 0, mas pode iniciar)
+                    updateLightStatus('idle'); 
+                    taskMessage.textContent = "Máquina pronta! Clique em INICIAR CICLO para começar o ciclo de 24 horas.";
+                }
+            } else {
+                // Usuário sem nível ativo - Botão desabilitado, luz vermelha, contador 00:00:00.
+                updateLightStatus('no_level'); 
+            }
+        });
+    </script>
 </div>
-
+{# Seu bloco de estilo original, fora de qualquer tag {% block %} para evitar o erro #}
 <style>
-    /* ------------------------------------ */
-    /* NOVO DESIGN: REFINARIA DE PETRÓLEO */
-    /* ------------------------------------ */
-    
-    .page-container {
-        padding: 10px;
-    }
+/* ... (Seu CSS completo deve ser incluído aqui) ... */
+/* ------------------------------------ */
+/* ESTILOS GERAIS */
+/* ------------------------------------ */
+:root {
+    --primary-color: #87CEEB; /* Azul Claro / Sky Blue */
+    --secondary-color: #4CAF50; /* Verde */
+    --dark-bg: #0d1a2f; /* Fundo Escuro */
+    --medium-bg: #1a3250; /* Fundo Médio */
+    --danger-color: #D32F2F; /* Vermelho */
+    --warning-color: #FFC107; /* Amarelo */
+}
 
-    .page-header {
-        background-color: #0d1a2f; /* Fundo mais escuro */
-        border-bottom: 3px solid #87CEEB; /* Borda temática */
-    }
-    .page-header h1 {
-        color: #87CEEB; /* Cor azul claro */
-        text-shadow: 0 0 5px rgba(135, 206, 235, 0.5);
-    }
-    
-    /* Imagem de Topo */
-    .refinery-image-top-container {
-        margin: -10px -10px 20px -10px; /* Expande para as bordas do page-container */
-        overflow: hidden;
-        box-shadow: 0 5px 10px rgba(0, 0, 0, 0.5);
-        border-bottom: 3px solid #1a3250;
-    }
-    .refinery-banner-image {
-        width: 100%;
-        height: 150px;
-        object-fit: cover;
-        filter: brightness(0.7) grayscale(0.1); /* Toque industrial */
-    }
+.page-container { 
+    padding: 10px; 
+    background-color: var(--dark-bg); 
+    min-height: 100vh;
+    color: #fff;
+}
+.page-header { 
+    background-color: var(--medium-bg); 
+    border-bottom: 3px solid var(--primary-color); 
+    padding: 15px;
+    text-align: center;
+    margin-bottom: 20px;
+    border-radius: 8px;
+}
+.page-header h1 { 
+    color: var(--primary-color); 
+    text-shadow: 0 0 8px rgba(135, 206, 235, 0.7); 
+    font-size: 1.8rem;
+}
+.info-box-danger { 
+    background-color: var(--danger-color); 
+    padding: 15px; 
+    margin-top: 15px; 
+    border-radius: 8px; 
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    text-align: center;
+    font-weight: bold;
+}
+.tasks-info { 
+    background-color: var(--medium-bg); 
+    border: 1px solid var(--primary-color); 
+    color: #fff; 
+    padding: 15px; 
+    margin-top: 30px; 
+    border-radius: 8px; 
+    box-shadow: 0 4px 10px rgba(0,0,0,0.6); 
+    text-align: center;
+}
+.tasks-info strong { 
+    color: var(--primary-color); 
+}
+.tasks-info .gain-amount { 
+    color: var(--secondary-color); 
+    font-weight: bold; 
+    font-size: 1.1rem;
+}
 
-    /* Container Principal da Máquina (Refinaria) */
-    .task-machine-container.refinery-style {
-        background: linear-gradient(to bottom, #1a3250, #0d1a2f);
-        border: 4px solid #000;
-        border-radius: 15px;
-        max-width: 380px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.8), inset 0 0 15px rgba(255, 255, 255, 0.05);
-    }
+/* ------------------------------------ */
+/* ESTILO DA MÁQUINA CIRCULAR (RELÓGIO) */
+/* ------------------------------------ */
+.task-machine-container.clock-style { 
+    background: var(--medium-bg); 
+    border: 4px solid var(--primary-color); 
+    border-radius: 15px; 
+    max-width: 350px; 
+    margin: 0 auto 30px auto; 
+    padding: 20px; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8), inset 0 0 15px rgba(255, 255, 255, 0.05); 
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
 
-    /* Estrutura da Torre (Novo Elemento Visual) */
-    .refinery-tower {
-        position: relative;
-        background-color: #333;
-        border-radius: 8px;
-        padding: 10px;
-        margin: 10px 0;
-        box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.7);
-    }
+.circular-display-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 25px;
+    width: 100%;
+}
 
-    /* Tubulações */
-    .tower-pipe {
-        position: absolute;
-        top: 0;
-        width: 8px;
-        height: 100%;
-        background-color: #666;
-        border: 1px solid #999;
-        border-radius: 5px;
-        box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.5);
-    }
-    .pipe-left { left: 5px; }
-    .pipe-right { right: 5px; }
+/* O CÍRCULO DE PROGRESSO */
+.circular-progress {
+    --progress: 0%; /* Variável CSS atualizada pelo JS */
+    position: relative;
+    height: 200px;
+    width: 200px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: conic-gradient(
+        var(--secondary-color) var(--progress), 
+        #1e2a40 var(--progress)
+    );
+    box-shadow: 0 0 15px var(--primary-color), inset 0 0 10px rgba(0,0,0,0.8);
+    border: 5px solid var(--dark-bg);
+}
 
-    /* Tela de Status */
-    .machine-screen.refinery-screen {
-        background-color: #00002d;
-        color: #FFC107; /* Cor de alerta ou petróleo */
-        border: 2px solid #FFC107;
-        box-shadow: inset 0 0 15px rgba(255, 193, 7, 0.5);
-        min-height: 90px;
-    }
-    .machine-screen p {
-        font-size: 1rem;
-        text-shadow: 0 0 5px #FFC107;
-    }
+/* O VALOR DENTRO DO CÍRCULO */
+.progress-value {
+    height: 180px;
+    width: 180px;
+    background-color: var(--dark-bg);
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 10px;
+}
 
-    /* Corpo da Máquina (Onde fica o botão) */
-    .machine-body.refinery-body {
-        padding: 20px 0 10px 0;
-    }
+.timer-icon {
+    font-size: 2rem;
+    color: var(--primary-color);
+    margin-bottom: 5px;
+}
 
-    /* Luzes de Refinaria (Painel de Controle) */
-    .machine-light-container.refinery-lights {
-        margin-bottom: 30px;
-        background-color: #222;
-        border-radius: 5px;
-        padding: 10px 20px;
-        box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.9);
-    }
-    .machine-light {
-        width: 20px;
-        height: 20px;
-        border: 2px solid #555;
-        background-color: #111; /* Cor padrão (apagada) */
-        box-shadow: none;
-        animation: none; /* Remove a animação padrão */
-        opacity: 1;
-    }
+.countdown-clock { 
+    font-family: 'Digital-7', monospace; /* Fonte que imita display digital */
+    font-size: 2.5rem; 
+    font-weight: bold; 
+    color: var(--warning-color); 
+    text-shadow: 0 0 10px rgba(255, 193, 7, 0.8); 
+}
 
-    /* Estados das Luzes */
-    .machine-light.active, .machine-light.blinking {
-        border: 2px solid #fff;
-    }
+#task-message { 
+    font-size: 0.9rem; 
+    color: #ddd; 
+    margin-top: 10px; 
+}
 
-    /* Vermelha: Pronto para Iniciar/Erro */
-    .machine-light.red-light.active, .machine-light.red-light.blinking {
-        background-color: #D32F2F;
-        box-shadow: 0 0 12px #D32F2F;
-    }
-    
-    /* Amarela: Processando */
-    .machine-light.yellow-light.active, .machine-light.yellow-light.blinking {
-        background-color: #FFC107;
-        box-shadow: 0 0 12px #FFC107;
-    }
-    
-    /* Verde: Concluído */
-    .machine-light.green-light.active, .machine-light.green-light.blinking {
-        background-color: #4CAF50;
-        box-shadow: 0 0 12px #4CAF50;
-    }
-    
-    /* Animação de Piscar Otimizada */
-    @keyframes blinking {
-        0% { opacity: 0.2; }
-        100% { opacity: 1; }
-    }
-    .machine-light.blinking {
-        animation: blinking 0.8s infinite alternate;
-    }
-    
-    /* Botão Válvula de Refinaria */
-    .work-button.refinery-valve-button {
-        background-color: #E65100; /* Laranja Escuro (Óleo/Fogo) */
-        background-image: linear-gradient(to top, #E65100, #FF9800);
-        color: #fff;
-        border-radius: 10px;
-        box-shadow: 0 5px 0 #BF360C, 0 0 15px rgba(255, 152, 0, 0.5);
-        transform: scale(0.95);
-        margin-bottom: 10px;
-    }
-    .work-button.refinery-valve-button:active {
-        transform: translateY(3px) scale(0.95);
-        box-shadow: 0 2px 0 #BF360C;
-    }
-    .work-button.refinery-valve-button:disabled {
-        background-color: #555 !important;
-        background-image: none !important;
-        box-shadow: 0 5px 0 #333 !important;
-        color: #bbb;
-    }
+/* ------------------------------------ */
+/* CONTROLES E LUZES */
+/* ------------------------------------ */
+.machine-controls {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
 
-    /* Informações de Nível (Ajustadas para o novo tema) */
-    .tasks-info {
-        background-color: #1a3250; /* Cor azul marinho mais clara */
-        border: 1px solid #87CEEB;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.5);
-    }
-    .tasks-info strong {
-        color: #4CAF50; /* Cor verde para destacar o status */
-    }
+.status-lights { 
+    margin-bottom: 25px; 
+    background-color: #222; 
+    border-radius: 5px; 
+    padding: 10px 20px; 
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.9); 
+    display: flex; 
+    justify-content: space-around; 
+    align-items: center; 
+    width: 70%; 
+}
 
-    /* Resetando estilos antigos não utilizados: */
-    .machine-dial { display: none; }
+.light-indicator { 
+    width: 15px; 
+    height: 15px; 
+    border-radius: 50%; 
+    margin: 0 10px; 
+    background-color: #111; 
+    transition: all 0.2s;
+}
+
+.light-indicator.active, .light-indicator.blinking { 
+    border: 2px solid #fff; 
+}
+
+.light-indicator.red-light.active, .light-indicator.red-light.blinking { 
+    background-color: var(--danger-color); 
+    box-shadow: 0 0 12px var(--danger-color); 
+}
+
+.light-indicator.yellow-light.active, .light-indicator.yellow-light.blinking { 
+    background-color: var(--warning-color); 
+    box-shadow: 0 0 12px var(--warning-color); 
+}
+
+.light-indicator.green-light.active, .light-indicator.green-light.blinking { 
+    background-color: var(--secondary-color); 
+    box-shadow: 0 0 12px var(--secondary-color); 
+}
+
+@keyframes blinking { 
+    0% { opacity: 0.3; } 
+    100% { opacity: 1; } 
+}
+
+.light-indicator.blinking { 
+    animation: blinking 0.8s infinite alternate; 
+}
+
+/* BOTÃO */
+.action-button.primary-action-button { 
+    background-color: var(--secondary-color); 
+    background-image: linear-gradient(to top, #388E3C, #4CAF50); 
+    color: #fff; 
+    border: none; 
+    padding: 15px 30px; 
+    border-radius: 10px; 
+    font-weight: bold; 
+    text-transform: uppercase; 
+    box-shadow: 0 5px 0 #2E7D32, 0 0 15px rgba(76, 175, 80, 0.5); 
+    transition: all 0.1s ease; 
+    width: 90%; 
+    font-size: 1.1rem;
+}
+.action-button.primary-action-button:active { 
+    transform: translateY(3px); 
+    box-shadow: 0 2px 0 #2E7D32; 
+}
+.action-button.primary-action-button:disabled { 
+    background-color: #555 !important; 
+    background-image: none !important; 
+    box-shadow: 0 5px 0 #333 !important; 
+    color: #bbb; 
+    cursor: not-allowed;
+}
 </style>
 {% endblock %}

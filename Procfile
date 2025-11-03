@@ -1,1 +1,1 @@
-web: gunicorn saudi_aramco.wsgi
+web: gunicorn regard.wsgi
