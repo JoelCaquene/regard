@@ -59,9 +59,9 @@ def check_and_apply_daily_gain(user):
         # Cria um registro de tarefa concluída (para fins de histórico e totalização)
         Task.objects.create(
             user=user, 
-            # Assumimos que o primeiro TaskDefinition (ID=1) é a 'Tarefa Diária Padrão'
-            # Isso é um palpite. Você deve garantir que TaskDefinition.objects.first() exista.
-            task_definition=Task.objects.first(), 
+            # CORREÇÃO CRÍTICA: Agora passamos NONE, pois este ganho não é associado a uma TaskDefinition.
+            # O erro estava aqui: 'task_definition=Task.objects.first()', que retornava um objeto Task.
+            task_definition=None, 
             earnings=daily_gain_amount
         )
         
