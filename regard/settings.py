@@ -127,9 +127,21 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles' # Onde os arquivos estáticos serão coletados
 STATICFILES_DIRS = [BASE_DIR / 'static'] # Seus diretórios estáticos locais
 
-# Define o storage do WhiteNoise para servir arquivos estáticos de forma comprimida
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# ======================================================================
+# 🚀 CORREÇÃO CRÍTICA PARA ARQUIVOS ESTÁTICOS NO DJANGO 5 / RENDER
+# Usamos STORAGES em vez de STATICFILES_STORAGE
+# ======================================================================
 
+# REMOVIDA: STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 # ======================================================================
 # CONFIGURAÇÕES DE ARMAZENAMENTO DE ARQUIVOS (MEDIA FILES)
