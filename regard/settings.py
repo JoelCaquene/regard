@@ -34,8 +34,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
-    # REMOVIDO: 'whitenoise.runserver_nostatic' (Não deve ser usado em produção!)
+    # WhiteNoise para servir arquivos estáticos de forma eficiente
+    'whitenoise.runserver_nostatic',
     
     # Seus Apps
     'core',
@@ -129,8 +129,11 @@ STATICFILES_DIRS = [BASE_DIR / 'static'] # Seus diretórios estáticos locais
 
 # ======================================================================
 # 🚀 CORREÇÃO CRÍTICA PARA ARQUIVOS ESTÁTICOS NO DJANGO 5 / RENDER
-# Usamos STORAGES para WhiteNoise
+# Usamos STORAGES em vez de STATICFILES_STORAGE
 # ======================================================================
+
+# REMOVIDA: STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
 STORAGES = {
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
@@ -142,6 +145,7 @@ STORAGES = {
 
 # ======================================================================
 # CONFIGURAÇÕES DE ARMAZENAMENTO DE ARQUIVOS (MEDIA FILES)
+# CLOUDINARY FOI REMOVIDO
 # ======================================================================
 
 # Configurações para arquivos de mídia (ARMAZENAMENTO LOCAL em Desenvolvimento)
@@ -149,8 +153,10 @@ MEDIA_ROOT = BASE_DIR / 'media'
 MEDIA_URL = '/media/'
 DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 
-# Se você precisar de armazenamento de mídia em produção (fotos de usuário), precisará 
+# Se você precisar de armazenamento de mídia em produção, precisará 
 # adicionar django-storages e configurar o AWS S3 (ou outro) aqui.
+# ======================================================================
+# FIM DA CONFIGURAÇÃO DE ARMAZENAMENTO
 # ======================================================================
 
 

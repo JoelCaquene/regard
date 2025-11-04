@@ -250,17 +250,20 @@ class TaskDefinition(models.Model):
 # --- FIM NOVO MODELO ---
 
 
-# --- MODELO TASK ATUALIZADO ---
+# --- MODELO TASK ATUALIZADO (A CORREÇÃO ESTÁ AQUI!) ---
 class Task(models.Model):
     """
     Registra a conclusão de uma tarefa por um usuário, ligada a uma definição.
     Essa ligação é crucial para a lógica regressiva/diária.
     """
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, verbose_name="Usuário")
-    # Agora a tarefa completeda se relaciona com uma definição (TaskDefinition)
+    # CORREÇÃO: Adicionado null=True e blank=True para permitir que registros de GANHO DIÁRIO
+    # sejam criados sem uma TaskDefinition específica, resolvendo o IntegrityError.
     task_definition = models.ForeignKey(
         TaskDefinition, 
-        on_delete=models.PROTECT, # Garante que a definição não seja apagada se houver registros
+        on_delete=models.SET_NULL, # Alterado de PROTECT para SET_NULL
+        null=True,                 # <--- ESSENCIAL! Permite que seja NULO no DB.
+        blank=True,                # <--- Permite que seja opcional no Django.
         verbose_name="Definição da Tarefa"
     )
     # Os ganhos podem ser registrados aqui (para auditoria, mesmo que sejam baseados na definição)
@@ -272,8 +275,10 @@ class Task(models.Model):
         verbose_name_plural = "Tarefas Concluídas"
 
     def __str__(self):
-        return f"Conclusão de '{self.task_definition.name}' por {self.user.phone_number}"
-# --- FIM MODELO TASK ATUALIZADO ---
+        # Tratamento para não falhar se task_definition for None
+        task_name = self.task_definition.name if self.task_definition else "Ganho Diário/Automático"
+        return f"Conclusão de '{task_name}' por {self.user.phone_number}"
+# --- FIM MODELO TASK CORRIGIDO ---
 
 # ---
 
