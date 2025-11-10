@@ -57,7 +57,7 @@
 {# CONTAINER PRINCIPAL: para acomodar botões laterais e a roleta #}
 <div class="main-layout-content">
     
-    {# BOTÕES DE AÇÃO LATERAIS (Vertical) - AGORA COM CORES INDIVIDUAIS E MENOS ALTURA #}
+    {# BOTÕES DE AÇÃO LATERAIS (Vertical) - MANTIDO #}
     <div class="action-buttons-lateral">
         <a href="{% url 'deposito' %}" class="lateral-item deposit-btn color-deposito">
             <div class="icon-container-lateral">
@@ -85,13 +85,61 @@
         </a>
     </div>
 
-    {# ROLETA (Ao lado dos botões laterais) #}
+    {# ROLETA (Ao lado dos botões laterais) - MANTIDO #}
     <div class="roulette-section-white">
         <div class="roulette-container">
             <a href="{% url 'roleta' %}" class="roulette-button-link">
                 <img src="{% static 'images/roulette_wheel_animated.png' %}" alt="Girar a Roleta" class="roulette-image" id="rouletteImage">
             </a>
         </div>
+    </div>
+</div>
+
+{# NOVO: INSTRUÇÕES DA ROLETA (Abaixo da Roleta e Botões) #}
+<div class="roulette-instructions-container">
+    <h3 class="instructions-title"><i class="fas fa-gift"></i> ROLETA DA SORTE <i class="fas fa-gift"></i></h3>
+    
+    <div class="instructions-card">
+        <h4 class="card-title"><i class="fas fa-trophy"></i> QUANDO E QUEM PODE RODAR A ROLETA DA SORTE? <i class="fas fa-trophy"></i></h4>
+        <ul class="instruction-list">
+            <li>
+                <span class="list-number">1.</span> 
+                Quando completares **5 subordinados ativos** na sua equipa podes solicitar **1 giro da roleta**;
+            </li>
+            <li>
+                <span class="list-number">2.</span> 
+                Todos os **Domingos**, depois da reunião haverá **Sorteio**. Os investidores *Exemplares* ganharão giro da roleta, serão mencionados, depois rodarão a roleta e publicarão seus ganhos.
+            </li>
+        </ul>
+    </div>
+
+    <div class="instructions-card">
+        <h4 class="card-title"><i class="fas fa-medal"></i> Como ser investidor exemplar na REGARD <i class="fas fa-medal"></i></h4>
+        <ul class="instruction-list">
+            <li>
+                <span class="list-number">1.</span> 
+                Ajude sempre **novos** no grupo;
+            </li>
+            <li>
+                <span class="list-number">2.</span> 
+                Publica sempre teu gráfico de **saque aprovado** no grupo todos os dias;
+            </li>
+            <li>
+                <span class="list-number">3.</span> 
+                Publica sempre gráfico de sua **renda** no grupo todos os dias;
+            </li>
+            <li>
+                <span class="list-number">4.</span> 
+                Publica sempre seu gráfico de sua **equipa** no grupo todos os dias.
+            </li>
+            <li>
+                <span class="list-number">5.</span> 
+                Anuncia sempre no administrador, qualquer anomalia ou difamação que ouvir ou ver sobre Regard no administrador do grupo no privado.
+            </li>
+        </ul>
+        <p class="card-footer">
+            <i class="fas fa-star"></i> Assim, mostrar ser **investidor exemplar** <i class="fas fa-star"></i>
+        </p>
     </div>
 </div>
 
@@ -136,6 +184,7 @@
         const popup = document.getElementById('welcomePopup');
         const closeButton = document.getElementById('closePopup');
 
+        // Corrigido para display: 'flex' para exibir corretamente o pop-up
         popup.style.display = 'flex'; 
 
         closeButton.addEventListener('click', () => {
@@ -158,14 +207,18 @@
         touch-action: manipulation;
     }
     body {
-        background-color: #f7f7f7 !important; 
+        /* NOVO: Cor de fundo Azul Escuro com Brilho Atreante */
+        background: linear-gradient(135deg, #0d1a2f 0%, #17335e 100%) !important;
         overflow-x: hidden; 
     }
     .container {
+        /* Garantir que o conteúdo tenha espaço acima do footer-menu */
         padding-bottom: 70px; 
         padding-left: 0;
         padding-right: 0;
         background-color: transparent !important;
+        /* NOVO: Melhorar a experiência em telas pequenas forçando a rolagem vertical */
+        min-height: 100vh;
     }
     
     .menu-header, .news-marquee-container {
@@ -204,24 +257,25 @@
     .image-slider {
         border-radius: 8px;
         overflow: hidden;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); 
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); /* Sombra mais destacada */
     }
     .image-slider img {
         width: 100%;
         height: auto;
     }
     
-    /* FAIXA DE NOTIFICAÇÃO (MANTIDO) */
+    /* FAIXA DE NOTIFICAÇÃO (MANTIDO) - Cores ajustadas para o fundo escuro */
     .notification-marquee-wrapper {
         display: flex;
         align-items: center;
-        background-color: #e5f5e8;
-        color: #1e8449; 
+        background-color: rgba(30, 132, 73, 0.2); /* Fundo verde transparente */
+        color: #82e0aa; /* Cor clara para o texto */
         padding: 5px 15px;
         margin: 15px 15px 0 15px; 
         border-radius: 8px;
         overflow: hidden;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        border: 1px solid #1e8449; /* Borda verde */
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
         font-size: 0.8rem;
         height: 30px;
     }
@@ -229,6 +283,7 @@
         font-size: 1rem;
         margin-right: 10px;
         flex-shrink: 0;
+        color: #1e8449; /* Ícone verde forte */
     }
     .marquee-text-container {
         flex-grow: 1;
@@ -258,13 +313,15 @@
         padding: 15px 15px 0 15px;
         margin-top: 15px; 
         position: relative;
+        /* NOVO: Garante que os botões e a roleta tenham bom espaçamento antes das instruções */
+        min-height: 250px; 
     }
 
-    /* BOTÕES LATERAIS (Área de controle) */
+    /* BOTÕES LATERAIS (Área de controle) - MANTIDO */
     .action-buttons-lateral {
         display: flex;
         flex-direction: column;
-        gap: 6px; /* REDUZIDO o espaço entre botões (era 8px) */
+        gap: 6px; 
         position: absolute; 
         top: 0;
         left: 15px;
@@ -272,65 +329,61 @@
         width: 90px; 
     }
 
-    /* ESTILO GERAL DO BOTÃO LATERAL - ALTURA REDUZIDA */
+    /* ESTILO GERAL DO BOTÃO LATERAL - MANTIDO */
     .lateral-item {
         display: flex;
         flex-direction: column;
         align-items: center;
         text-align: center;
         text-decoration: none;
-        padding: 8px 5px; /* REDUZIDO o padding interno (era 10px) */
+        padding: 8px 5px; 
         border-radius: 10px; 
         color: #fff;
-        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1); /* Sombra mais forte para o fundo escuro */
         transition: transform 0.2s, box-shadow 0.2s;
-        border: 1px solid rgba(255, 255, 255, 0.1); /* Borda mais discreta */
+        border: 1px solid rgba(255, 255, 255, 0.1); 
     }
     .lateral-item:active {
         transform: translateY(1px);
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
     }
 
-    /* CORES PERSONALIZADAS PARA CADA BOTÃO */
+    /* CORES PERSONALIZADAS PARA CADA BOTÃO - MANTIDO */
     .color-deposito {
-        /* Verde e Azul para Dinheiro/Crescimento */
         background: linear-gradient(145deg, #1e8449, #176f3c); 
     }
     .color-saque {
-        /* Vermelho/Laranja para Ação/Saída */
         background: linear-gradient(145deg, #cc4e4e, #a93c3c); 
     }
     .color-tarefa {
-        /* Azul Claro/Ciano para Produtividade */
         background: linear-gradient(145deg, #4aa6cc, #3982a9); 
     }
     .color-perfil {
-        /* Roxo/Magenta para Identidade/Perfil */
         background: linear-gradient(145deg, #8e44ad, #7a3894); 
     }
 
 
-    /* ESTILOS DOS ÍCONES */
+    /* ESTILOS DOS ÍCONES - MANTIDO */
     .icon-container-lateral {
-        width: 35px; /* Ícone um pouco menor (era 40px) */
+        width: 35px; 
         height: 35px;
         display: flex;
         justify-content: center;
         align-items: center;
         background-color: #fff; 
         border-radius: 50%;
-        margin-bottom: 3px; /* Espaço reduzido (era 5px) */
-        box-shadow: 0 0 5px rgba(0, 0, 0, 0.3); /* Sombra mais suave */
+        margin-bottom: 3px; 
+        box-shadow: 0 0 8px rgba(255, 255, 255, 0.3); /* Sombra mais brilhante para contraste */
     }
     .icon-container-lateral i {
-        font-size: 1.3rem; /* Ícone levemente menor (era 1.5rem) */
+        font-size: 1.3rem; 
         color: #0d1a2f; 
     }
     .lateral-item span {
-        font-size: 0.65rem; /* Texto levemente menor (era 0.7rem) */
+        font-size: 0.65rem; 
         font-weight: 600;
         color: #fff;
-        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.6);
+        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.8);
     }
 
     /* ROLETA (Ao lado dos botões laterais) - MANTIDO */
@@ -341,6 +394,9 @@
         text-align: center; 
         background-color: transparent; 
         width: calc(100% - 115px); 
+        /* NOVO: Garante que a roleta permaneça visível mesmo que haja rolagem no body */
+        max-width: 250px; 
+        min-width: 180px;
     }
     .roulette-container {
         display: inline-block; 
@@ -356,9 +412,80 @@
         from { transform: rotate(0deg); }
         to { transform: rotate(360deg); }
     }
+    
+    
+    /* NOVO: ESTILOS PARA AS INSTRUÇÕES DA ROLETA */
+    .roulette-instructions-container {
+        background-color: rgba(255, 255, 255, 0.05); /* Fundo semi-transparente no fundo escuro */
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 15px;
+        margin: 25px 15px 15px 15px; /* Espaçamento com margem maior no topo */
+        color: #fff;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.1);
+    }
 
+    .instructions-title {
+        text-align: center;
+        color: #ffeb3b; /* Amarelo/Ouro para destaque */
+        font-size: 1.2rem;
+        margin-top: 0;
+        margin-bottom: 20px;
+        text-shadow: 0 0 5px rgba(255, 235, 59, 0.8);
+    }
+    
+    .instructions-card {
+        background-color: rgba(0, 0, 0, 0.3); /* Fundo escuro mais transparente para o cartão */
+        padding: 10px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+    }
 
-    /* RODAPÉ (FIXO E BRANCO) - MANTIDO */
+    .card-title {
+        color: #1e8449; /* Verde para títulos de seção */
+        font-size: 1rem;
+        margin-top: 0;
+        margin-bottom: 10px;
+        font-weight: bold;
+    }
+    
+    .instruction-list {
+        list-style: none; /* Remove bullet points padrão */
+        padding: 0;
+        margin: 0;
+    }
+
+    .instruction-list li {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+        line-height: 1.4;
+    }
+
+    .list-number {
+        background-color: #1e8449; /* Fundo do número/ícone */
+        color: #fff;
+        border-radius: 50%;
+        min-width: 18px;
+        height: 18px;
+        text-align: center;
+        font-size: 0.7rem;
+        font-weight: bold;
+        line-height: 18px;
+        margin-right: 8px;
+        flex-shrink: 0;
+    }
+
+    .card-footer {
+        text-align: center;
+        margin-top: 15px;
+        color: #ffeb3b;
+        font-weight: bold;
+        font-size: 0.95rem;
+    }
+
+    /* ---------------------- BARRA DE NAVEGAÇÃO INFERIOR ---------------------- */
     .footer-menu-new {
         position: fixed;
         bottom: 0;
@@ -369,18 +496,21 @@
         align-items: center;
         background-color: #fff; 
         border-top: 1px solid #ddd;
-        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+        /* NOVO: Sombra mais forte */
+        box-shadow: 0 -3px 15px rgba(0, 0, 0, 0.2); 
         z-index: 500;
         height: 60px;
     }
+    /* Garante que os itens do rodapé usem o espaço de forma estável */
     .footer-item {
+        flex-basis: 0; /* NOVO: Garante estabilidade na distribuição de espaço */
+        flex-grow: 1; /* NOVO: Garante estabilidade na distribuição de espaço */
         display: flex;
         flex-direction: column;
         align-items: center;
         text-decoration: none;
         color: #999; 
         padding: 5px 0;
-        flex-grow: 1;
         transition: color 0.3s;
     }
     .footer-item:hover, .footer-item.active {
