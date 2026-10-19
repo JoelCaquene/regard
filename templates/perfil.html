@@ -1,0 +1,377 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Meu Perfil{% endblock %}
+
+{% block content %}
+<div class="page-container">
+	<div class="page-header">
+		<h1>Meu Perfil</h1>
+	</div>
+
+	{% if messages %}
+		<div class="messages-container">
+			{% for message in messages %}
+				<p class="message {{ message.tags }}">{{ message }}</p>
+			{% endfor %}
+		</div>
+	{% endif %}
+	
+	<div class="profile-info-card top-info">
+		<h3>📊 Resumo da Conta</h3>
+		<div class="info-grid info-grid-2col">
+			<div class="info-item">
+				<i class="fas fa-phone-alt icon-phone"></i>
+				<span class="label">Telefone:</span>
+				<span class="value">{{ user.phone_number|default:'N/A' }}</span>
+			</div>
+			<div class="info-item">
+				<i class="fas fa-coins icon-balance"></i>
+				<span class="label">Saldo Activo:</span>
+				<span class="value">KZ {{ user.available_balance|default:'0.00' }}</span>
+			</div>
+			<div class="info-item">
+				<i class="fas fa-star icon-level"></i>
+				<span class="label">Nível:</span>
+				<span class="value">{{ user.active_level.name|default:'Básico' }}</span>
+			</div>
+			<div class="info-item">
+				<i class="fas fa-wallet icon-withdraw"></i>
+				<span class="label">Retirada Total:</span>
+				<span class="value">KZ {{ user.total_withdrawn|default:'0.00' }}</span>
+			</div>
+		</div>
+	</div>
+
+	<div class="action-buttons-container">
+		<button type="button" class="action-button primary-action" onclick="showBankForm()">
+			<i class="fas fa-university"></i>
+			<span>Dados Bancários (Editar)</span>
+		</button>
+		
+		<a href="{% url 'download_app' %}" class="action-button secondary-action">
+			<i class="fas fa-download"></i>
+			<span>Download do Aplicativo</span>
+		</a>
+		
+		<a href="{% url 'logout' %}" class="action-button danger-action">
+			<i class="fas fa-sign-out-alt"></i>
+			<span>Sair da Conta</span>
+		</a>
+	</div>
+
+	<div id="bank-form-container" class="profile-card form-card" style="display:none;">
+		<h3>✏️ Editar Dados Bancários</h3>
+		<form method="post" class="form-style">
+			{% csrf_token %}
+			<div class="form-group">
+				<label for="{{ form.account_holder_name.id_for_label }}">Nome Completo:</label>
+				{{ form.account_holder_name }}
+				{% for error in form.account_holder_name.errors %} <p class="errorlist">{{ error }}</p> {% endfor %}
+			</div>
+			<div class="form-group">
+				<label for="{{ form.bank_name.id_for_label }}">Nome do Banco:</label>
+				{{ form.bank_name }}
+				{% for error in form.bank_name.errors %} <p class="errorlist">{{ error }}</p> {% endfor %}
+			</div>
+			<div class="form-group">
+				<label for="{{ form.IBAN.id_for_label }}">IBAN:</label>
+				{{ form.IBAN }}
+				{% for error in form.IBAN.errors %} <p class="errorlist">{{ error }}</p> {% endfor %}
+			</div>
+			<button type="submit" name="update_bank" class="submit-button primary-button">
+				<i class="fas fa-save"></i> Salvar Dados Bancários
+			</button>
+			<button type="button" class="submit-button secondary-button" onclick="hideBankForm()">
+				<i class="fas fa-times"></i> Cancelar
+			</button>
+		</form>
+	</div>
+
+</div>
+
+<style>
+	/* ------------------------------------------------------------------- */
+	/* ESTILOS DE TEMA: BRANCO COM BRILHO, ESCURO E PROFISSIONAL */
+	/* ------------------------------------------------------------------- */
+	@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
+
+	/* TEMA CLARO SOLICITADO */
+	body {
+		background-color: #f8f9fa; /* Fundo Branco/Claro */
+		color: #343a40; /* Texto Escuro */
+		font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+	}
+	
+	.page-container {
+		padding: 10px 15px; /* Reduz o padding superior */
+		max-width: 450px;
+		margin: 0 auto;
+	}
+	
+	/* Remoção total de elementos de navegação antiga */
+	footer, nav.footer-menu { 
+		display: none !important; 
+	}
+	.page-header {
+		/* ENCOSTAR O TOPO: Reduzido padding e margin */
+		text-align: center;
+		padding: 10px 0 5px; 
+		margin-bottom: 10px;
+	}
+	.page-header h1 {
+		color: #007bff; /* Azul primário */
+		font-size: 2.2em;
+		font-weight: 700;
+		text-shadow: none; /* Removido brilho no tema claro */
+	}
+
+	/* Mensagens de sucesso/erro */
+	.messages-container {
+		margin-bottom: 15px;
+	}
+	.message {
+		padding: 10px;
+		border-radius: 5px;
+		font-weight: bold;
+		text-align: center;
+		margin-bottom: 5px;
+		color: #fff;
+	}
+	.success { background-color: #28a745; }
+	.error { background-color: #dc3545; }
+	.warning-message {
+		color: #856404;
+		padding: 10px;
+		background-color: #fff3cd; /* Fundo amarelo claro */
+		border: 1px solid #ffeeba;
+		border-radius: 5px;
+		text-align: center;
+	}
+
+	/* CARDS GERAIS (Fundo Branco/Claro) */
+	.profile-info-card, .bank-details-display, .form-card {
+		background-color: #ffffff; /* Fundo do card branco */
+		padding: 20px;
+		border-radius: 10px;
+		margin-bottom: 15px;
+		box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Sombra suave */
+	}
+	.profile-info-card h3, .bank-details-display h3, .form-card h3 {
+		color: #007bff; /* Azul Destaque */
+		border-bottom: 2px solid #e9ecef;
+		padding-bottom: 10px;
+		margin-bottom: 15px;
+		font-size: 1.3rem;
+	}
+
+	/* INFORMAÇÕES PRINCIPAIS (GRID) */
+	.info-grid-2col {
+		display: grid;
+		/* AQUI: Define 2 colunas para todas as resoluções para economizar espaço */
+		grid-template-columns: 1fr 1fr; 
+		gap: 10px;
+	}
+
+	.info-item {
+		background-color: #f1f1f1; /* Fundo cinza claro para os itens */
+		padding: 10px;
+		border-radius: 5px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		border: 1px solid #e9ecef;
+		text-align: center;
+	}
+	.info-item .label {
+		color: #6c757d; /* Cinza para o rótulo */
+		font-size: 0.85rem;
+		font-weight: 500;
+		margin-top: 5px;
+	}
+	.info-item .value {
+		color: #343a40;
+		font-size: 1.0rem;
+		font-weight: bold;
+	}
+	.info-item i {
+		font-size: 1.3rem;
+		margin-bottom: 5px;
+	}
+	/* Cores dos Ícones */
+	.icon-phone { color: #fd7e14; } 
+	.icon-balance { color: #ffc107; } 
+	.icon-level { color: #28a745; } 
+	.icon-withdraw { color: #dc3545; } 
+
+	/* DADOS BANCÁRIOS */
+	.bank-info-grid {
+		display: grid;
+		grid-template-columns: 1fr;
+	}
+	.bank-details-display .info-item {
+		flex-direction: row;
+		justify-content: space-between;
+		align-items: center;
+		background: none;
+		padding: 8px 0;
+		border: none;
+		/* Mantém a linha divisória entre Titular e Banco */
+		border-bottom: 1px dashed #ced4da; 
+	}
+	/* Garante que o último item (Banco) não tenha linha divisória abaixo */
+	.bank-details-display .info-item:last-child {
+		border-bottom: none; 
+	}
+	.bank-details-display .label {
+		font-size: 0.95rem;
+		color: #343a40;
+	}
+	.bank-details-display .value {
+		font-size: 0.95rem;
+		font-weight: 600;
+	}
+	/* Esta classe .highlighted no CSS não terá efeito prático na exibição do IBAN, mas é mantida */
+	.info-item.highlighted .value {
+		color: #28a745; /* Destaque Verde para o IBAN */
+		cursor: pointer;
+	}
+
+	/* BOTÕES DE AÇÃO NA PARTE INFERIOR */
+	.action-buttons-container {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		margin-top: 20px;
+	}
+	.action-button {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 12px;
+		border-radius: 8px;
+		font-weight: bold;
+		font-size: 1.0rem;
+		text-decoration: none;
+		border: none;
+		cursor: pointer;
+		transition: transform 0.2s, box-shadow 0.2s;
+		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+	}
+	.action-button i {
+		font-size: 1.2rem;
+		margin-right: 10px;
+	}
+	.action-button:hover {
+		transform: translateY(-2px);
+	}
+	
+	.primary-action {
+		background-color: #007bff; /* Azul Primário */
+		color: #fff;
+	}
+	.primary-action:hover {
+		background-color: #0056b3;
+	}
+	.secondary-action {
+		background-color: #6c757d; /* Cinza Secundário (Download) */
+		color: #fff;
+	}
+	.secondary-action:hover {
+		background-color: #5a6268;
+	}
+	.danger-action {
+		background-color: #dc3545; /* Vermelho (Sair) */
+		color: #fff;
+	}
+	.danger-action:hover {
+		background-color: #c82333;
+	}
+
+	/* ESTILOS DO FORMULÁRIO */
+	.form-style label {
+		color: #007bff;
+		font-weight: 600;
+		margin-bottom: 5px;
+	}
+	.form-style input {
+		width: 100%;
+		padding: 10px;
+		border: 1px solid #ced4da;
+		background-color: #fff;
+		color: #343a40;
+		border-radius: 5px;
+		box-sizing: border-box;
+	}
+	.form-style input:focus {
+		border-color: #007bff;
+		box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+		outline: none;
+	}
+	.submit-button {
+		display: block;
+		width: 100%;
+		padding: 10px;
+		text-align: center;
+		margin-top: 10px;
+		font-weight: bold;
+		border-radius: 5px;
+		border: none;
+	}
+	.secondary-button {
+		background-color: #6c757d;
+		color: #fff;
+	}
+	.secondary-button:hover {
+		background-color: #5a6268;
+	}
+	.errorlist {
+		color: #dc3545;
+		font-size: 0.8rem;
+		margin-top: 5px;
+	}
+</style>
+
+<script>
+	const bankFormContainer = document.getElementById('bank-form-container');
+	const bankDetailsDisplay = document.querySelector('.bank-details-display');
+
+	// Função que garante que o formulário é exibido se houver erros ou se o usuário clicou no botão
+	function showBankForm() {
+		bankFormContainer.style.display = 'block';
+		window.scrollTo(0, bankFormContainer.offsetTop - 20); // Rola para o formulário
+	}
+
+	function hideBankForm() {
+		bankFormContainer.style.display = 'none';
+	}
+
+	document.addEventListener("DOMContentLoaded", function() {
+		// 1. Verifica se o formulário deve ser exibido por causa de erros ou query param
+		const hasFormErrors = document.querySelector('#bank-form-container .errorlist');
+		if (hasFormErrors || window.location.search.includes('show_bank_form=true')) {
+			showBankForm();
+		}
+		
+		// 2. A funcionalidade de Copiar IBAN não funcionará, pois o elemento foi removido da exibição.
+		const copyableIBAN = document.querySelector('.copyable');
+		if (copyableIBAN) {
+			copyableIBAN.addEventListener('click', function() {
+				const iban = this.getAttribute('data-iban');
+				navigator.clipboard.writeText(iban)
+					.then(() => {
+						this.innerHTML = 'Copiado! <i class="fas fa-check"></i>';
+						setTimeout(() => {
+							// Este bloco nunca será alcançado pelo JS, pois o elemento foi removido no HTML
+							this.innerHTML = `${iban} <i class="far fa-copy"></i>`;
+						}, 2000);
+					})
+					.catch(err => {
+						console.error('Falha ao copiar:', err);
+						alert('Falha ao copiar o IBAN. Tente novamente.');
+					});
+			});
+		}
+	});
+</script>
+{% endblock %}

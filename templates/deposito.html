@@ -1,0 +1,450 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Depósito{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>DEPÓSITO</h1>
+</div>
+
+{% if deposit_success %}
+    <div class="success-screen">
+        <img src="{% static 'images/success_icon.png' %}" alt="Depósito Enviado" class="success-icon">
+        <h2>Depósito Enviado com Sucesso! ✅</h2>
+        <p>Aguarde a aprovação. O seu depósito está a ser processado e será confirmado em 5 a 45 minutos.</p>
+        <a href="{% url 'menu' %}" class="submit-button back-to-menu-button">Voltar ao Menu</a>
+    </div>
+{% else %}
+    <div class="page-content">
+        <div class="step-indicator">
+            <div class="step-circle active" id="indicator-1">1 🏦</div>
+            <div class="step-line"></div>
+            <div class="step-circle" id="indicator-2">2 💰</div>
+            <div class="step-line"></div>
+            <div class="step-circle" id="indicator-3">3 📸</div>
+        </div>
+
+        <div class="info-box">
+            <p>{{ deposit_instruction }}</p>
+        </div>
+
+        <form id="deposit-form" method="post" enctype="multipart/form-data" class="form-style">
+            {% csrf_token %}
+            <input type="hidden" name="{{ form.amount.name }}" id="id_amount" value="">
+            
+            <div id="step-1" class="step-container active">
+                <h3><span class="step-icon">1 🏦</span> Escolha o Banco</h3>
+                {% if platform_bank_details %}
+                    <div class="bank-buttons">
+                        {% for bank_detail in platform_bank_details %}
+                            <button type="button" class="bank-button" data-bank-id="{{ forloop.counter }}">
+                                {{ bank_detail.bank_name }}
+                            </button>
+                        {% endfor %}
+                    </div>
+
+                    {% for bank_detail in platform_bank_details %}
+                        <div id="bank-details-{{ forloop.counter }}" class="bank-details-card" style="display: none;">
+                            <p><strong>Nome do Titular:</strong> {{ bank_detail.account_holder_name }}</p>
+                            <div class="IBAN-group">
+                                <p><strong>IBAN:</strong> <span id="IBAN-{{ forloop.counter }}">{{ bank_detail.IBAN }}</span></p>
+                                <button type="button" class="copy-button" data-iban-id="IBAN-{{ forloop.counter }}">Copiar</button>
+                            </div>
+                            <button type="button" class="next-button primary-button" data-next-step="2">Próxima Etapa (Valor) ➡️</button>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="error-message">Nenhum detalhe bancário da plataforma disponível no momento.</p>
+                {% endif %}
+            </div>
+
+            <div id="step-2" class="step-container" style="display: none;">
+                <h3><span class="step-icon">2 💰</span> Selecione o Valor</h3>
+                <p class="step-info">Escolha o valor que corresponde ao seu Nível desejado.</p>
+                <div class="amount-buttons">
+                    {% for deposit_value in level_deposits_list %}
+                        <button type="button" class="amount-button" data-amount="{{ deposit_value }}">
+                            {{ deposit_value }} KZ
+                        </button>
+                    {% empty %}
+                        <p class="error-message">Nenhum valor de depósito de Nível encontrado. Contacte o suporte.</p>
+                    {% endfor %}
+                </div>
+                <div class="selected-amount-display" style="display: none;">
+                    <p>Valor Selecionado: <span id="selected-amount-text">0.00</span> KZ</p>
+                    <button type="button" class="next-button primary-button" data-next-step="3" id="btn-step-2-next" disabled>Próxima Etapa (Comprovativo) ➡️</button>
+                </div>
+            </div>
+
+            <div id="step-3" class="step-container" style="display: none;">
+                <h3><span class="step-icon">3 📸</span> Carregar Comprovativo</h3>
+                <p class="step-info">Carregue o comprovativo da transferência no valor de <strong id="final-amount-text">0.00</strong> KZ.</p>
+
+                <div class="form-group">
+                    <input type="file" name="{{ form.proof_of_payment.name }}" id="{{ form.proof_of_payment.id_for_label }}" accept="image/*" required class="file-input-custom">
+                    <label for="{{ form.proof_of_payment.id_for_label }}" class="custom-file-label">Comprovativo de Pagamento (Imagem):</label>
+                    <span id="file-name-display" class="file-name-display">Nenhum arquivo escolhido.</span>
+                </div>
+                
+                <button type="submit" class="submit-button success-button large-button" id="submit-deposit-button" disabled>
+                    Finalizar e Enviar Depósito ✅
+                </button>
+                <button type="button" class="prev-button secondary-button large-button" data-prev-step="2">Voltar à Etapa 2</button>
+            </div>
+        </form>
+    </div>
+{% endif %}
+
+<style>
+    /* ------------------------------------------------------------------- */
+    /* ESTILOS ATUALIZADOS: Resolução e Estética da Etapa 3 e ÍCONE DE SUCESSO */
+    /* ------------------------------------------------------------------- */
+
+    /* Fundo Principal */
+    body {
+        background-color: #f4f7f6; /* Fundo branco/muito claro */
+        color: #333; 
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* Cabeçalho e Contentor Principal */
+    .page-header { 
+        padding: 20px 0; 
+        margin: 20px auto 30px auto; 
+        max-width: 550px; 
+    }
+    .page-header h1 { 
+        color: #6f42c1; /* Roxo */
+        text-align: center; 
+        font-size: 2.2em;
+        font-weight: 700;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+    }
+
+    /* A tela de sucesso e o conteúdo agora têm um max-width otimizado para não "lagar" */
+    .page-content, .success-screen {
+        background-color: #ffffff; 
+        padding: 30px; 
+        margin: 20px auto; 
+        border-radius: 15px; 
+        max-width: 450px; /* Mantido para desktops, mas o media query ajusta para mobile */
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1), 0 0 50px rgba(111, 66, 193, 0.08); 
+        border: 1px solid #e9ecef;
+    }
+    
+    /* 🚨 NOVO: Ajuste para o Ícone de Sucesso 🚨 */
+    .success-screen .success-icon {
+        width: 80px; /* Tamanho pequeno e fixo */
+        height: 80px;
+        margin: 0 auto 20px auto; /* Centraliza e adiciona espaço */
+        display: block; /* Garante que 'margin: auto' funcione para centralizar */
+    }
+
+
+    /* Indicador de Etapas (Demais estilos mantidos e/ou aprimorados na resposta anterior) */
+    .step-indicator {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding: 0 10px;
+    }
+
+    .step-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #e9ecef;
+        color: #6c757d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        transition: all 0.3s;
+        z-index: 10;
+        border: 2px solid #ccc;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .step-circle.active {
+        background-color: #6f42c1; 
+        color: #fff;
+        border-color: #6f42c1;
+        transform: scale(1.1);
+    }
+
+    .step-line {
+        flex-grow: 1;
+        height: 2px;
+        background-color: #ccc;
+        margin: 0 5px;
+    }
+    
+    /* Caixa de Informação */
+    .info-box { 
+        background-color: #f7f2ff;
+        padding: 15px; 
+        border-radius: 8px; 
+        margin-bottom: 25px; 
+        border-left: 5px solid #6f42c1;
+    }
+    .step-container h3 { 
+        color: #343a40; 
+        text-align: center; 
+        margin-bottom: 25px; 
+        border-bottom: 1px solid #dee2e6; 
+        padding-bottom: 10px; 
+        font-size: 1.4em;
+    }
+
+    /* --- Botões Maiores de Ação (Etapa 3) --- */
+    .large-button {
+        padding: 18px !important; 
+        font-size: 1.2rem !important; 
+        margin-top: 15px !important;
+        margin-bottom: 0; 
+    }
+    .prev-button.large-button {
+        margin-top: 10px !important; 
+    }
+
+    /* --- Estilo Customizado para o Upload de Arquivo (Comprovativo) --- */
+    .form-group input[type="file"] {
+        width: 0.1px;
+        height: 0.1px;
+        opacity: 0;
+        overflow: hidden;
+        position: absolute;
+        z-index: -1;
+    }
+
+    .form-group .custom-file-label {
+        cursor: pointer;
+        display: block; 
+        padding: 18px 25px; 
+        background-color: #6f42c1; 
+        color: #fff;
+        border-radius: 8px;
+        font-weight: bold;
+        transition: background-color 0.3s;
+        margin-bottom: 10px;
+        width: 100%;
+        text-align: center;
+        box-sizing: border-box;
+        font-size: 1.1rem; 
+    }
+
+    .form-group .custom-file-label:hover {
+        background-color: #593699;
+    }
+    
+    /* Indicador de nome do arquivo */
+    .file-name-display {
+        display: block;
+        margin-top: 5px;
+        margin-bottom: 20px;
+        color: #38c172; 
+        font-size: 1rem;
+        text-align: center;
+        word-break: break-word; 
+    }
+    
+    /* Regras Gerais de Botões (mantidas) */
+    .next-button, .prev-button, .submit-button { 
+        padding: 15px; 
+        border: none; 
+        border-radius: 8px; 
+        font-size: 1.1rem; 
+        cursor: pointer; 
+        transition: background-color 0.3s, transform 0.2s; 
+        margin-top: 20px; 
+        width: 100%; 
+        font-weight: bold;
+    }
+
+    .primary-button { background-color: #6f42c1; color: #fff; }
+    .secondary-button { background-color: #6c757d; color: #fff; }
+    .success-button { background-color: #28a745; color: #fff; }
+
+    /* ------------------------------------------------------------------- */
+    /* RESPONSIVIDADE: Ajustes para Ecrãs Menores (Mobile) */
+    /* ------------------------------------------------------------------- */
+    @media (max-width: 600px) {
+        .page-content, .success-screen {
+            margin: 10px;
+            padding: 20px;
+            width: auto; 
+            max-width: 95%; /* Ajuste a largura máxima para ecrãs pequenos */
+        }
+        
+        .bank-buttons, .amount-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr; 
+            gap: 10px;
+        }
+
+        .bank-button, .amount-button {
+            padding: 12px;
+            font-size: 0.95rem;
+        }
+
+        .large-button {
+            padding: 15px !important; 
+            font-size: 1.1rem !important;
+        }
+
+        .form-group .custom-file-label {
+            padding: 15px 20px;
+            font-size: 1rem;
+        }
+    }
+</style>
+
+<script>
+    // O JavaScript (JS) de funcionalidade permanece INALTERADO
+    document.addEventListener('DOMContentLoaded', () => {
+        const steps = [
+            document.getElementById('step-1'),
+            document.getElementById('step-2'),
+            document.getElementById('step-3')
+        ];
+        const indicators = [
+            document.getElementById('indicator-1'),
+            document.getElementById('indicator-2'),
+            document.getElementById('indicator-3')
+        ];
+        let currentStep = 1;
+        
+        let selectedBankId = null;
+        let selectedAmount = null;
+
+        const updateStepVisibility = () => {
+            steps.forEach((step, index) => {
+                const stepNum = index + 1;
+                step.style.display = stepNum === currentStep ? 'block' : 'none';
+                
+                if (indicators[index]) {
+                    indicators[index].classList.toggle('active', stepNum === currentStep);
+                }
+            });
+            window.scrollTo(0, 0); 
+        };
+
+        // --- Lógica Geral de Navegação (MANTIDA) ---
+        document.querySelectorAll('.next-button').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const nextStep = parseInt(e.target.dataset.nextStep);
+                if (nextStep === 3 && selectedAmount === null) {
+                    alert('Por favor, selecione um valor antes de continuar.');
+                    return;
+                }
+                currentStep = nextStep;
+                updateStepVisibility();
+            });
+        });
+
+        document.querySelectorAll('.prev-button').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const prevStep = parseInt(e.target.dataset.prevStep);
+                currentStep = prevStep;
+                updateStepVisibility();
+            });
+        });
+
+
+        // --- Etapa 1: Seleção do Banco e IBAN (MANTIDA) ---
+        const bankButtons = document.querySelectorAll('.bank-button');
+        const bankDetailsCards = document.querySelectorAll('.bank-details-card');
+
+        bankButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                selectedBankId = button.dataset.bankId;
+                
+                bankButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+
+                bankDetailsCards.forEach(card => card.style.display = 'none');
+                
+                const selectedBankDetails = document.getElementById(`bank-details-${selectedBankId}`);
+                
+                if (selectedBankDetails) {
+                    selectedBankDetails.style.display = 'block';
+                }
+            });
+        });
+
+        document.querySelectorAll('.copy-button').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const IBANId = e.target.dataset.ibanId;
+                const IBANText = document.getElementById(IBANId).innerText;
+                navigator.clipboard.writeText(IBANText)
+                    .then(() => {
+                        e.target.innerText = 'Copiado!';
+                        setTimeout(() => {
+                            e.target.innerText = 'Copiar'; // Texto simplificado
+                        }, 2000);
+                    })
+                    .catch(err => {
+                        console.error('Falha ao copiar: ', err);
+                        alert('Falha ao copiar o IBAN. Tente novamente.');
+                    });
+            });
+        });
+
+
+        // --- Etapa 2: Seleção do Valor (MANTIDA) ---
+        const amountButtons = document.querySelectorAll('.amount-button');
+        const selectedAmountText = document.getElementById('selected-amount-text');
+        const finalAmountText = document.getElementById('final-amount-text');
+        const nextButtonStep2 = document.getElementById('btn-step-2-next');
+        const selectedAmountDisplay = document.querySelector('.selected-amount-display');
+
+        amountButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                selectedAmount = button.dataset.amount;
+                
+                amountButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+
+                selectedAmountText.innerText = parseFloat(selectedAmount).toFixed(2);
+                finalAmountText.innerText = parseFloat(selectedAmount).toFixed(2);
+                document.getElementById('id_amount').value = selectedAmount; 
+                
+                selectedAmountDisplay.style.display = 'block';
+                nextButtonStep2.disabled = false;
+
+                const proofInput = document.getElementById('{{ form.proof_of_payment.id_for_label }}');
+                const submitButton = document.getElementById('submit-deposit-button');
+                submitButton.disabled = !(proofInput && proofInput.files.length > 0);
+            });
+        });
+
+
+        // --- Etapa 3: Envio do Comprovativo (MANTIDA) ---
+        const proofInput = document.getElementById('{{ form.proof_of_payment.id_for_label }}');
+        const fileNameDisplay = document.getElementById('file-name-display');
+        const submitButton = document.getElementById('submit-deposit-button');
+
+        if (proofInput) {
+            const fileLabel = document.querySelector(`label[for="${proofInput.id}"]`);
+            if (fileLabel) {
+                fileLabel.innerText = "Escolher Comprovativo (Toque aqui)";
+            }
+
+            proofInput.addEventListener('change', () => {
+                if (proofInput.files.length > 0) {
+                    fileNameDisplay.innerText = `Arquivo Selecionado: ${proofInput.files[0].name}`;
+                    submitButton.disabled = false; 
+                } else {
+                    fileNameDisplay.innerText = 'Nenhum arquivo escolhido.';
+                    submitButton.disabled = true; 
+                }
+            });
+        }
+        
+        // Inicia na Etapa 1
+        updateStepVisibility();
+    });
+</script>
+{% endblock %}

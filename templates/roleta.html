@@ -1,0 +1,462 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Roleta da Sorte Mágica Premium{% endblock %}
+
+{% block content %}
+<div class="roulette-page-container">
+    
+    <div class="magic-header">
+        <h1>🏆 Roleta 💎</h1>
+        <p class="subtitle">Gire para descobrir seu prêmio lendário. Que a sorte esteja com você!</p>
+    </div>
+
+    <div class="roulette-card-container">
+        
+        <div class="spins-info">
+            <p>Giros restantes: <span id="roulette-spins" class="spins-count">{% if roulette_spins %}{{ roulette_spins }}{% else %}0{% endif %}</span> <i class="fas fa-ticket-alt"></i></p>
+        </div>
+        
+        {% csrf_token %}
+
+        <div class="roulette-wheel-wrapper">
+            <div class="roulette-pointer">
+                <i class="fas fa-hand-point-down"></i> </div>
+            
+            <img id="roulette-wheel" 
+                 src="https://placehold.co/300x300/673AB7/FFFFFF?text=ROTA+%5B1%5D" 
+                 alt="Roda da Fortuna" 
+                 class="roulette-wheel">
+            
+            <div class="wheel-glow"></div>
+        </div>
+
+        <button type="button" class="spin-button" id="spin-button" {% if not roulette_spins or roulette_spins <= 0 %}disabled{% endif %}>
+            GIRAR AGORA! <i class="fas fa-redo-alt"></i>
+        </button>
+        
+        <div class="roulette-result" id="roulette-result" style="display: none;"></div>
+    </div>
+</div>
+
+<div id="result-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-button" onclick="closeModal()">&times;</span>
+        <div id="modal-icon" class="modal-icon"></div>
+        <h2 id="modal-title"></h2>
+        <p id="modal-message"></p>
+        <button class="modal-close-btn" onclick="closeModal()">FECHAR</button>
+    </div>
+</div>
+
+<style>
+    /* Importação de Ícones Font Awesome (Ícones modernos) */
+    @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
+
+    /* Variáveis de Cores */
+    :root {
+        --color-primary: #8A2BE2; /* Azul-Violeta (Base) */
+        --color-secondary: #FFD700; /* Dourado (Acento) */
+        --color-accent: #00FFFF; /* Ciano (Brilho) */
+        --color-danger: #E91E63; /* Vermelho (Giros/Aviso) */
+    }
+
+    /* 1. Fundo da Página (Tema Escuro Suave) */
+    .roulette-page-container {
+        padding: 30px 15px;
+        min-height: 90vh;
+        background: linear-gradient(135deg, #1f2833, #0a111a); /* Fundo escuro sutil */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    /* 2. Cabeçalho */
+    .magic-header {
+        text-align: center;
+        margin-bottom: 40px;
+        color: #fff;
+    }
+    .magic-header h1 {
+        font-size: 2.5rem;
+        color: var(--color-secondary); /* Dourado */
+        text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        margin-bottom: 10px;
+    }
+    .subtitle {
+        color: #b0c4de;
+        font-style: normal;
+        font-size: 1.1rem;
+    }
+
+    /* 3. Card da Roleta (Foco Principal) */
+    .roulette-card-container {
+        background-color: #2c3e50; /* Cinza Escuro */
+        padding: 40px 30px;
+        border-radius: 25px;
+        width: 90%;
+        max-width: 480px;
+        text-align: center;
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5), 0 0 0 6px var(--color-primary); /* Sombra + Borda Primária */
+        transition: all 0.4s ease;
+        position: relative; /* Para o efeito de luz */
+    }
+    .roulette-card-container::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        border-radius: 25px;
+        background: radial-gradient(circle at 50% 0, rgba(255, 255, 255, 0.05), transparent 70%);
+        pointer-events: none;
+    }
+
+    /* 4. Informação de Giros */
+    .spins-info {
+        font-size: 1.2rem;
+        color: #fff;
+        font-weight: 500;
+        margin-bottom: 30px;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: 10px;
+    }
+    .spins-count {
+        color: var(--color-accent); /* Ciano Vibrante */
+        font-weight: bold;
+        font-size: 1.5rem;
+        margin-right: 5px;
+    }
+
+    /* 5. Wrapper da Roda e Ponteiro */
+    .roulette-wheel-wrapper {
+        position: relative;
+        width: 100%;
+        max-width: 320px;
+        margin: 20px auto 40px;
+        aspect-ratio: 1 / 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    /* Ponteiro Premium */
+    .roulette-pointer {
+        position: absolute;
+        top: -30px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: var(--color-secondary);
+        font-size: 2.5rem;
+        z-index: 10;
+        text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+    }
+
+    /* Roda da Roleta */
+    .roulette-wheel {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        display: block;
+        border-radius: 50%;
+        /* Transição aprimorada: mais voltas, mais suave ao parar */
+        transition: transform 6s cubic-bezier(0.2, 0.8, 0.4, 1.05); 
+        box-shadow: 0 0 25px rgba(0, 0, 0, 0.5), 0 0 10px var(--color-accent); /* Sombra mais forte e brilho ciano */
+        border: 5px solid var(--color-secondary);
+        background-color: #4a5a6a; /* Fundo para quando a imagem não carrega */
+    }
+
+    /* Efeito de Brilho da Roda (Novo) */
+    .wheel-glow {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        box-shadow: 0 0 40px var(--color-accent);
+        opacity: 0.3;
+        transition: opacity 0.5s ease;
+        pointer-events: none;
+    }
+
+    /* Classe de Efeito de Vibração (Adicionado via JS no setTimeout) */
+    @keyframes wheel-shake {
+        0%, 100% { transform: translate(0, 0); }
+        25% { transform: translate(-2px, -2px); }
+        50% { transform: translate(2px, 2px); }
+        75% { transform: translate(-2px, 2px); }
+    }
+    .shaking {
+        animation: wheel-shake 0.1s linear 5; /* Vibra 5 vezes rapidamente */
+    }
+    
+    /* 6. Botão de Girar (Efeito Pulse) */
+    .spin-button {
+        padding: 18px 45px;
+        background: linear-gradient(90deg, var(--color-primary), #9c27b0); 
+        color: #fff;
+        border: none;
+        border-radius: 50px;
+        font-size: 1.4rem;
+        cursor: pointer;
+        font-weight: bold;
+        text-transform: uppercase;
+        box-shadow: 0 5px 20px rgba(138, 43, 226, 0.8);
+        transition: all 0.3s ease;
+        animation: pulse 1.5s infinite; /* Efeito Pulse */
+    }
+    @keyframes pulse {
+        0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(138, 43, 226, 0.7); }
+        70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(138, 43, 226, 0); }
+        100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(138, 43, 226, 0); }
+    }
+    .spin-button:hover:not(:disabled) {
+        background: linear-gradient(90deg, #9c27b0, var(--color-primary));
+        transform: translateY(-3px) scale(1.02);
+        box-shadow: 0 8px 25px rgba(138, 43, 226, 1);
+        animation: none; /* Remove pulse on hover */
+    }
+    .spin-button:disabled {
+        background-color: #555;
+        box-shadow: none;
+        cursor: not-allowed;
+        opacity: 0.7;
+        animation: none;
+    }
+
+    /* 7. Modal de Resultado (Novo - Melhor Exibição de Ganho) */
+    .modal {
+        display: none; 
+        position: fixed; 
+        z-index: 100;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.6);
+        padding-top: 60px;
+        backdrop-filter: blur(5px);
+    }
+
+    .modal-content {
+        background: linear-gradient(145deg, #1e272e, #3a4750);
+        margin: 5% auto;
+        padding: 30px;
+        border: 5px solid var(--color-secondary);
+        border-radius: 15px;
+        width: 90%;
+        max-width: 400px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.7);
+        text-align: center;
+        animation: dropIn 0.5s ease-out;
+        color: #fff;
+    }
+    @keyframes dropIn {
+        0% { transform: translateY(-50px) scale(0.5); opacity: 0; }
+        100% { transform: translateY(0) scale(1); opacity: 1; }
+    }
+
+    .close-button {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        transition: color 0.2s;
+    }
+
+    .close-button:hover,
+    .close-button:focus {
+        color: #fff;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .modal-icon {
+        font-size: 4rem;
+        margin-bottom: 20px;
+        color: var(--color-secondary);
+        text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+    }
+
+    #modal-title {
+        color: var(--color-accent);
+        margin-bottom: 10px;
+        font-size: 1.8rem;
+    }
+
+    #modal-message {
+        font-size: 1.1rem;
+        margin-bottom: 20px;
+        color: #b0c4de;
+    }
+
+    .modal-close-btn {
+        background: var(--color-primary);
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 30px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background 0.3s;
+    }
+
+    .modal-close-btn:hover {
+        background: #9c27b0;
+    }
+
+</style>
+
+<script>
+    function getCsrfToken() {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                let cookie = cookies[i].trim();
+                if (cookie.startsWith('csrftoken=')) {
+                    cookieValue = decodeURIComponent(cookie.substring('csrftoken='.length));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function showModal(title, message, isSuccess = true) {
+        const modal = document.getElementById('result-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessage = document.getElementById('modal-message');
+        const modalIcon = document.getElementById('modal-icon');
+
+        modalTitle.textContent = title;
+        modalMessage.textContent = message;
+        
+        // Define o ícone com base no sucesso/erro
+        if (isSuccess) {
+            modalIcon.innerHTML = '<i class="fas fa-trophy"></i>';
+            modalTitle.style.color = 'var(--color-secondary)';
+        } else {
+            modalIcon.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+            modalTitle.style.color = 'var(--color-danger)';
+        }
+
+        modal.style.display = "block";
+    }
+
+    function closeModal() {
+        document.getElementById('result-modal').style.display = "none";
+    }
+
+    // Fecha o modal ao clicar fora dele
+    window.onclick = function(event) {
+        const modal = document.getElementById('result-modal');
+        if (event.target == modal) {
+            closeModal();
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const spinButton = document.getElementById('spin-button');
+        const rouletteWheel = document.getElementById('roulette-wheel');
+        const spinsDisplay = document.getElementById('roulette-spins');
+        
+        const csrfToken = getCsrfToken();
+        const spinDuration = 6000; // 6 segundos (deve corresponder ao transition do CSS)
+
+        if (spinButton && rouletteWheel && spinsDisplay && csrfToken) {
+            let currentSpins = parseInt(spinsDisplay.textContent.trim()) || 0;
+            
+            const updateSpinButtonState = (spins) => {
+                spinButton.disabled = spins <= 0;
+            };
+
+            updateSpinButtonState(currentSpins);
+
+            spinButton.addEventListener('click', function() {
+                currentSpins = parseInt(spinsDisplay.textContent.trim()) || 0;
+                
+                if (currentSpins <= 0) {
+                    showModal('Ops!', 'Você não tem giros restantes. Recarregue para tentar novamente.', false);
+                    spinButton.disabled = true;
+                    return;
+                }
+                
+                // 1. Desativa o botão e prepara a roda
+                spinButton.disabled = true;
+                
+                // Remove a classe de vibração, caso exista
+                rouletteWheel.classList.remove('shaking'); 
+                
+                // Reseta a rotação para garantir um novo giro
+                const currentRotation = getComputedStyle(rouletteWheel).getPropertyValue('transform');
+                const matrix = new DOMMatrixReadOnly(currentRotation);
+                const currentDegrees = Math.atan2(matrix.m21, matrix.m11) * (180 / Math.PI);
+                // A rotação base é o valor atual + 5 voltas completas
+                const baseRotation = Math.floor(currentDegrees) + 360 * 5; 
+                
+                // Lógica de comunicação com Django
+                fetch('{% url "spin_roulette" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({}) 
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erro na resposta do servidor (' + response.status + ')');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        // 2. Lógica de Animação de Giro
+                        // O 'data.angle' (assumindo que o Django retorna o ângulo alvo) seria ideal aqui. 
+                        // Já que não temos, mantemos a rotação aleatória, mas a partir do ângulo base:
+                        const finalDegrees = baseRotation + (Math.floor(Math.random() * 360)); 
+                        
+                        // Aplica o giro. O CSS fará a animação.
+                        rouletteWheel.style.transform = `rotate(${finalDegrees}deg)`;
+
+                        // 3. Espera o tempo da transição
+                        setTimeout(() => {
+                            // Adiciona um efeito de vibração (shaking) no final para dar mais emoção
+                            rouletteWheel.classList.add('shaking');
+                            
+                            // Exibe o resultado no Modal
+                            showModal('🥳 PARABÉNS! Você Ganhou!', data.message, true);
+                            
+                            // Atualiza os giros restantes no front-end
+                            const remainingSpins = currentSpins - 1;
+                            spinsDisplay.textContent = remainingSpins;
+                            currentSpins = remainingSpins;
+                            
+                            // Remove a vibração após a animação
+                            setTimeout(() => {
+                                rouletteWheel.classList.remove('shaking');
+                                updateSpinButtonState(currentSpins);
+                            }, 500); 
+
+                        }, spinDuration);
+
+                    } else {
+                        // 4. Caso a API retorne erro
+                        showModal('😥 Ah não!', data.message, false);
+                        updateSpinButtonState(currentSpins);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro de Rede/API:', error);
+                    showModal('⚠️ Erro Crítico', 'Ocorreu um erro ao comunicar com o servidor. Tente novamente.', false);
+                    updateSpinButtonState(currentSpins);
+                });
+            });
+        } else {
+             console.error('Erro de Inicialização: Elementos da Roleta ou token CSRF ausentes. Verifique o console para mais detalhes.');
+             if (spinButton) {
+                 spinButton.disabled = true;
+                 spinButton.textContent = 'ERRO DE CARREGAMENTO';
+             }
+        }
+    });
+</script>
+{% endblock %}
