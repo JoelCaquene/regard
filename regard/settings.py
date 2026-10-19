@@ -25,9 +25,26 @@ RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='').split(',')
 if '' in ALLOWED_HOSTS:
     ALLOWED_HOSTS.remove('')
-ALLOWED_HOSTS.extend(['127.0.0.1', 'localhost'])
+
+# Adiciona hosts de desenvolvimento e domínios de produção
+ALLOWED_HOSTS.extend([
+    '127.0.0.1',
+    'localhost',
+    'regard.ink',
+    'www.regard.ink',
+])
+
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
+# Configuração de origens confiáveis para CSRF (Obrigatório para HTTPS e formulários)
+CSRF_TRUSTED_ORIGINS = [
+    'https://regard.ink',
+    'https://www.regard.ink',
+]
+if RENDER_EXTERNAL_HOSTNAME:
+    CSRF_TRUSTED_ORIGINS.append(f'https://{RENDER_EXTERNAL_HOSTNAME}')
+
 
 # Application definition
 INSTALLED_APPS = [
@@ -135,8 +152,6 @@ STATICFILES_DIRS = [BASE_DIR / 'static'] # Seus diretórios estáticos locais
 # Usamos STORAGES em vez de STATICFILES_STORAGE
 # ======================================================================
 
-# REMOVIDA: STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
 STORAGES = {
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
@@ -148,25 +163,16 @@ STORAGES = {
 
 # ======================================================================
 # CONFIGURAÇÕES DE ARMAZENAMENTO DE ARQUIVOS (MEDIA FILES)
-# CLOUDINARY FOI REMOVIDO
 # ======================================================================
 
-# Configurações para arquivos de mídia (ARMAZENAMENTO LOCAL em Desenvolvimento)
 MEDIA_ROOT = BASE_DIR / 'media'
 MEDIA_URL = '/media/'
 DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 
-# Se você precisar de armazenamento de mídia em produção, precisará 
-# adicionar django-storages e configurar o AWS S3 (ou outro) aqui.
-# ======================================================================
-# FIM DA CONFIGURAÇÃO DE ARMAZENAMENTO
-# ======================================================================
-
-
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# UKZ o modelo de usuário personalizado
+# Modelo de usuário personalizado
 AUTH_USER_MODEL = 'core.CustomUser'
 
 LOGIN_URL = 'login'
